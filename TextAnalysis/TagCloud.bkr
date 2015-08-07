@@ -1,0 +1,2391 @@
+{
+    "beaker": "2",
+    "evaluators": [
+        {
+            "name": "Html",
+            "plugin": "Html",
+            "view": {
+                "cm": {
+                    "mode": "htmlmixed"
+                }
+            }
+        },
+        {
+            "name": "Latex",
+            "plugin": "Latex",
+            "view": {
+                "cm": {
+                    "mode": "stex"
+                }
+            }
+        },
+        {
+            "name": "JavaScript",
+            "plugin": "JavaScript",
+            "jsSetting2": "",
+            "jsSetting1": "",
+            "view": {
+                "cm": {
+                    "mode": "javascript",
+                    "background": "#FFE0F0"
+                }
+            }
+        },
+        {
+            "name": "IPython",
+            "plugin": "IPython",
+            "setup": "%matplotlib inline\nimport numpy\nimport matplotlib\nfrom matplotlib import pylab, mlab, pyplot\nnp = numpy\nplt = pyplot\nfrom IPython.display import display\nfrom IPython.core.pylabtools import figsize, getfigs\nfrom pylab import *\nfrom numpy import *\n",
+            "view": {
+                "cm": {
+                    "mode": "python"
+                }
+            }
+        }
+    ],
+    "cells": [
+        {
+            "id": "sectionzJZV9u",
+            "type": "section",
+            "title": "Words statistic representation of any txt file.\nThis example uses d3 tag cloud component and python matplotlib library.\n\nImportant notes:\n1. Analyzed text must be located at \"C:\\Users\\beakertesting\\\\.beaker\\TagCloud.txt\"(or you should modify this path manually in code)\n2. If you want to hide some words in cloud, you should modify 'deletions' \"C:\\Users\\beakertesting\\\\.beaker\\deletions.txt\" file\n3. If you want to hide some words in cloud, you should modify 'deletions' \"C:\\Users\\beakertesting\\\\.beaker\\replaces.txt\" file\n4. tagCloudSize variable -  the size of tag cloud\n5. histSize variable -  the count of words, which are displayed in histogram\n6. textChunkSize variable - the count of words in one part of text, used for hist analysis\n",
+            "level": 2,
+            "evaluatorReader": false,
+            "collapsed": false
+        },
+        {
+            "id": "codek4ljcQ",
+            "type": "code",
+            "evaluator": "Html",
+            "input": {
+                "body": [
+                    "<style>",
+                    "",
+                    "</style>",
+                    "<div id=\"tagclouddiv\"></div>"
+                ]
+            },
+            "output": {
+                "state": {},
+                "result": {
+                    "type": "BeakerDisplay",
+                    "innertype": "Html",
+                    "object": "<script>\nvar beaker = bkHelper.getBeakerObject().beakerObj;\n</script>\n<style>\n\n</style>\n<div id=\"tagclouddiv\"></div>"
+                },
+                "selectedType": "BeakerDisplay",
+                "elapsedTime": 0
+            },
+            "evaluatorReader": true,
+            "lineCount": 4
+        },
+        {
+            "id": "codeBJwic8",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "from collections import Counter",
+                    "import sys, re, string, ast, itertools",
+                    "",
+                    "#replace some strings in text by another text",
+                    "def multiwordReplace(text, wordDic):   ",
+                    "    rc = re.compile('|'.join(map(re.escape, wordDic)))",
+                    "    def translate(match):",
+                    "        return wordDic[match.group(0)]",
+                    "    return rc.sub(translate, text)",
+                    "",
+                    "#loads file containing word exclusion list",
+                    "def loadDeletions(deletionsLocation):",
+                    "    deletions = ()",
+                    "    try:",
+                    "      with open(deletionsLocation, 'r') as f:",
+                    "        deletions = f.read()",
+                    "    except IOError:",
+                    "      print 'No deletion file, ignoring'",
+                    "    return deletions",
+                    "",
+                    "#loads file containing word replace list",
+                    "def loadReplaceWordsDictionary(replaceLocation):",
+                    "  dictsFromFile = { ' ': ' '}",
+                    "  try:",
+                    "    with open(replaceLocation, 'r') as f:",
+                    "      for line in f:        ",
+                    "        dictsFromFile = ast.literal_eval('{%s}' % line)",
+                    "  except IOError as e:",
+                    "    print 'No replace dictionary file, ignoring'  ",
+                    "  return dictsFromFile",
+                    "",
+                    "#prepares words for analysis (deletion, replacing)",
+                    "def prepareWords(textAsString, deletions, replaceDictionary):",
+                    "  transTable = string.maketrans(\"\",\"\")",
+                    "  words = multiwordReplace(textAsString.translate(transTable, string.punctuation), replaceDictionary).split()",
+                    "",
+                    "  filtered = list( filter((lambda x: str(x).lower() not in deletions), words))",
+                    "  filtered = list( filter((lambda x: len(str(x)) > 3), filtered))",
+                    "  return filtered",
+                    "",
+                    "#generates frequency array for some most common words per chunk of specified size",
+                    "def generateFrequencyChart(words, chunkSize=30, chartSize=6):",
+                    "  wordcount = Counter(words)  ",
+                    "  mostCommonWords = wordcount.most_common(chartSize)    ",
+                    "  def grouper(iterable, n, fillvalue=None):",
+                    "    args = [iter(iterable)] * n",
+                    "    return itertools.izip_longest(*args, fillvalue=fillvalue)  ",
+                    "  word_freq = [(word[0], [wordsChunk.count(word[0]) for wordsChunk in list(grouper(iter(words), chunkSize) )] ) for word in mostCommonWords]",
+                    "  return list(word_freq) ",
+                    " ",
+                    "#returns most common words in text and their frequencies",
+                    "def getWordsFrequency(words, histSize):",
+                    "  wordcount = Counter(words)",
+                    "  wordcount = wordcount.most_common(histSize)",
+                    "  return wordcount",
+                    " ",
+                    "#generates frequency array for some most common words",
+                    "#you can change scale_ratio for better cloud view",
+                    "def generateTagCloud(words, cloud_size=None, scale_ratio=200):  ",
+                    "  wordcount = getWordsFrequency(words, cloud_size)",
+                    "  max_freq = wordcount[0][1]",
+                    "  min_freq = wordcount[-1][1]",
+                    "  word_size = (max_freq + 1. - min_freq) / scale_ratio ",
+                    "  word_freq = ((word, int((freq-min_freq)/word_size)) for word, freq in wordcount)",
+                    "  words_array = [{ \"word\": word, \"frequency\" : frequency } for word, frequency in word_freq]  ",
+                    "  return words_array",
+                    "",
+                    "",
+                    "if __name__ == \"__main__\":",
+                    "  textLocation = \"C:\\Users\\beakertesting\\.beaker\\TagCloud.txt\"",
+                    "  deletionsLocation = \"C:\\Users\\beakertesting\\.beaker\\deletions.txt\"",
+                    "  replaceDictionaryLocation = \"C:\\Users\\beakertesting\\.beaker\\replaces.txt\"",
+                    "  tagCloudSize = 200",
+                    "  textChunkSize = 200",
+                    "  histSize = 2",
+                    "  try:",
+                    "    with open(textLocation, 'r') as f:",
+                    "      wordString = f.read()",
+                    "      preparedWords = prepareWords(wordString, loadDeletions(deletionsLocation), loadReplaceWordsDictionary(replaceDictionaryLocation))",
+                    "      beaker.textTags = generateTagCloud(preparedWords, tagCloudSize)    ",
+                    "      textHist = generateFrequencyChart(preparedWords, textChunkSize, histSize)",
+                    "      beaker.textHist = textHist",
+                    "  except IOError as e:",
+                    "    print 'No text input file, ignoring'  ",
+                    ""
+                ]
+            },
+            "output": {
+                "state": {},
+                "selectedType": "Results",
+                "pluginName": "IPython",
+                "shellId": "F0EBDA1434C5457C8DEFF11FF71BBE96",
+                "elapsedTime": 270,
+                "dataresult": [
+                    "{word: 'the', frequency: 99}",
+                    "{word: 'and', frequency: 68}",
+                    "{word: 'of', frequency: 61}",
+                    "{word: 'to', frequency: 59}",
+                    "{word: 'I', frequency: 49}",
+                    "{word: 'a', frequency: 42}",
+                    "{word: 'my', frequency: 42}",
+                    "{word: 'in', frequency: 36}",
+                    "{word: 'you', frequency: 33}",
+                    "{word: 'Ham.', frequency: 33}",
+                    "{word: 'is', frequency: 26}",
+                    "{word: 'his', frequency: 24}",
+                    "{word: 'it', frequency: 23}",
+                    "{word: 'not', frequency: 22}",
+                    "{word: 'And', frequency: 21}",
+                    "{word: 'that', frequency: 19}",
+                    "{word: 'your', frequency: 19}",
+                    "{word: 'with', frequency: 18}",
+                    "{word: 'this', frequency: 16}",
+                    "{word: 'be', frequency: 15}",
+                    "{word: 'for', frequency: 13}",
+                    "{word: 'he', frequency: 12}",
+                    "{word: 'have', frequency: 12}",
+                    "{word: 'The', frequency: 10}",
+                    "{word: 'as', frequency: 10}",
+                    "{word: 'but', frequency: 10}",
+                    "{word: 'me', frequency: 10}",
+                    "{word: 'will', frequency: 9}",
+                    "{word: 'him', frequency: 8}",
+                    "{word: 'are', frequency: 7}",
+                    "{word: 'To', frequency: 7}",
+                    "{word: 'That', frequency: 7}",
+                    "{word: 'Hor.', frequency: 7}",
+                    "{word: 'what', frequency: 6}",
+                    "{word: 'King.', frequency: 6}",
+                    "{word: 'our', frequency: 6}",
+                    "{word: 'do', frequency: 6}",
+                    "{word: 'so', frequency: 6}",
+                    "{word: 'we', frequency: 6}",
+                    "{word: 'shall', frequency: 6}",
+                    "{word: 'on', frequency: 6}",
+                    "{word: 'by', frequency: 5}",
+                    "{word: 'no', frequency: 4}",
+                    "{word: 'Pol.', frequency: 4}",
+                    "{word: 'all', frequency: 4}",
+                    "{word: 'But', frequency: 4}",
+                    "{word: 'from', frequency: 4}",
+                    "{word: 'thou', frequency: 4}",
+                    "{word: 'thy', frequency: 4}",
+                    "{word: 'A', frequency: 3}",
+                    "{word: 'lord,', frequency: 3}",
+                    "{word: 'or', frequency: 3}",
+                    "{word: 'they', frequency: 3}",
+                    "{word: 'at', frequency: 3}",
+                    "{word: 'What', frequency: 3}",
+                    "{word: 'Queen.', frequency: 3}",
+                    "{word: 'As', frequency: 3}",
+                    "{word: 'her', frequency: 2}",
+                    "{word: 'more', frequency: 2}",
+                    "{word: 'most', frequency: 2}",
+                    "{word: 'My', frequency: 2}",
+                    "{word: 'was', frequency: 2}",
+                    "{word: 'if', frequency: 2}",
+                    "{word: 'like', frequency: 2}",
+                    "{word: 'good', frequency: 2}",
+                    "{word: 'you,', frequency: 2}",
+                    "{word: 'For', frequency: 2}",
+                    "{word: 'would', frequency: 2}",
+                    "{word: 'Laer.', frequency: 2}",
+                    "{word: '[Enter', frequency: 1}",
+                    "{word: 'let', frequency: 1}",
+                    "{word: 'may', frequency: 1}",
+                    "{word: 'Oph.', frequency: 1}",
+                    "{word: 'O,', frequency: 1}",
+                    "{word: 'very', frequency: 1}",
+                    "{word: 'lord.', frequency: 1}",
+                    "{word: 'How', frequency: 1}",
+                    "{word: 'I'll', frequency: 1}",
+                    "{word: 'know', frequency: 1}",
+                    "{word: 'It', frequency: 1}",
+                    "{word: 'hath', frequency: 1}",
+                    "{word: 'must', frequency: 1}",
+                    "{word: 'their', frequency: 1}",
+                    "{word: 'some', frequency: 0}",
+                    "{word: 'Ros.', frequency: 0}",
+                    "{word: 'should', frequency: 0}",
+                    "{word: 'am', frequency: 0}",
+                    "{word: 'an', frequency: 0}",
+                    "{word: 'You', frequency: 0}",
+                    "{word: 'This', frequency: 0}",
+                    "{word: 'come', frequency: 0}",
+                    "{word: 'such', frequency: 0}",
+                    "{word: 'us', frequency: 0}",
+                    "{word: 'O', frequency: 0}",
+                    "{word: ''tis', frequency: 0}",
+                    "{word: 'Clown.', frequency: 0}",
+                    "{word: 'did', frequency: 0}",
+                    "{word: 'them', frequency: 0}",
+                    "{word: 'make', frequency: 0}",
+                    "{word: 'much', frequency: 0}"
+                ],
+                "result": {
+                    "type": "Results",
+                    "outputdata": [
+                        {
+                            "type": "out",
+                            "value": "No text input file, ignoring\n"
+                        }
+                    ]
+                }
+            },
+            "evaluatorReader": true,
+            "lineCount": 85
+        },
+        {
+            "id": "codeOvDzac",
+            "type": "code",
+            "evaluator": "JavaScript",
+            "input": {
+                "body": [
+                    "var fill = d3.scale.category20();",
+                    "var layout = d3.layout.cloud()",
+                    "    .size([1200, 1200])",
+                    "    .words(beaker.textTags.map(function(d) {      ",
+                    "      return {text: d.word, size: d.frequency};",
+                    "    }))",
+                    "    .padding(5)",
+                    "    .fontSize(function(d) { return d.size; })",
+                    "    .on(\"end\", draw);",
+                    "layout.start();",
+                    "function draw(words) {",
+                    "  d3.select(\"#tagclouddiv\").append(\"svg\")",
+                    "      .attr(\"width\", layout.size()[0])",
+                    "      .attr(\"height\", layout.size()[1])",
+                    "    .append(\"g\")",
+                    "      .attr(\"transform\", \"translate(\" + layout.size()[0] / 2 + \",\" + layout.size()[1] / 2 + \")\")",
+                    "    .selectAll(\"text\")",
+                    "      .data(words)",
+                    "    .enter().append(\"text\")",
+                    "      .style(\"font-size\", function(d) { return d.size + \"px\"; })",
+                    "      .style(\"fill\", function(d, i) { return fill(i); })",
+                    "      .attr(\"text-anchor\", \"middle\")",
+                    "      .attr(\"transform\", function(d) {",
+                    "        return \"translate(\" + [d.x, d.y] + \")\";",
+                    "      })",
+                    "      .text(function(d) { return d.text; });",
+                    "}"
+                ]
+            },
+            "output": {
+                "state": {},
+                "result": {
+                    "start": null,
+                    "stop": null,
+                    "timeInterval": null,
+                    "words": null,
+                    "size": null,
+                    "font": null,
+                    "rotate": null,
+                    "text": null,
+                    "spiral": null,
+                    "fontSize": null,
+                    "padding": null,
+                    "on": null
+                },
+                "selectedType": "Text",
+                "pluginName": "JavaScript",
+                "elapsedTime": 445
+            },
+            "evaluatorReader": true,
+            "lineCount": 27
+        },
+        {
+            "id": "codedhuViu",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "import matplotlib.pyplot as plt",
+                    "import matplotlib.cm as cm",
+                    "import numpy as np",
+                    "from random import randint",
+                    "",
+                    "def printHist(wordfrequency):   ",
+                    "  plt.subplot(1,1,1)  ",
+                    "  rect = plt.bar(range(0,len(wordfrequency[1])), wordfrequency[1], 2.0, color=colors1[randint(0, len(cm.rainbow(np.linspace(0, 1, 10)))-1)], alpha=0.5)  ",
+                    "  plt.grid(True)  ",
+                    "  return rect[0]",
+                    "",
+                    "plt.title('Histogram of words')",
+                    "plt.xlabel('parts of text ' + str(textChunkSize) + ' words per part')  ",
+                    "plt.ylabel('frequency')  ",
+                    "plt.legend( tuple(map(printHist, textHist)), tuple(((word) for word, frequency in textHist)) )",
+                    "plt.legend(loc='upper right')",
+                    "plt.show()"
+                ]
+            },
+            "output": {
+                "state": {},
+                "result": "<div class=\"output_subarea output_png\"><img src=\"data:image/png;base64,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\ntTcXF3P9kCGRnpKiIlqFFauWf/IJRTfeCECr7t3ZWlzMB7H22qlTo/bW4mIenDSJnRs3BnJV0/o7\npndvHhsxosr9nzBuHAt27gz0rFhB6dKlrNu7F4DyFSv4sqQk2t9Nkyfz5bp1EB6PXVu3plXYytz/\nVB+p/jKXp+zbacCAGpevmjyZPaqUr1gBwJcbN3LNHXdE+/fpwoUU9+0b3QmlciIb582jZPnySEvm\n8Vs0cWLaVWWmfeLHA+D5a69lN1DQvTsb583jgiuvBILj2bZRIy4+++xK9o23M/cv1U6NB5fxWtN4\nq21/smkPHDjQWf/0mTPTjkfmeK9p/GWzP6nPqhtvJUVFaeMt2/2vbvzV9P+fzfZz2S4sLGTkyJEA\n0fkyGxrcAQADgItF5HygBXCIiPy3qv57fKXUTlVFZvJlf9svjh8P7DvwMz76CNh3YiqdPDlaXj51\natr3U9+Nfz9Fy44dOf+pp6J2Zjm7WY8+mqapS8+e0Ta0eXOOiVUe2vvee/Q855yoveKjjzg6XD7/\nvvv42p13RstWjx1Ln0GDov5SFYyq2v+WHTumVd6aO3Ei7fr1i9obYlW/2vXvT9OVK6N2s0MOSdvn\nzP3v0rNnWp+Zy1P2rW150aRJdBs2rNr9m3beeXTq359O/funf79/f5a//Xa126/qeGbqj3+ndffu\nka1aTZ7M+RlVomobb1X1DzAr1OAyXmsab7XtT13b1el/749/pM8tt1Qa3y7jL5v9yTwetY23uu5f\nVf//kN3xaqh2ymmnuOeee8iGBg8BqertqtpdVXsDlwHvZ578fcTHOOTO2FW6T/hoK8sBuOFjXNtH\nO4GftsoWH34HYE8BGYZhJEASIaAIVf0Q+DBJDa74+Cxy8y5dkpZQJT7ayn4H4EZmuMEHfLQT+Gmr\nbPHhDsAwDMNIAHMAjvgYh7QcgDuWA3DDx7i2j3YCP22VLeYADMMw8hRzAI74GIe0HIA7lgNww8e4\nto92Aj9tlS3mAAzDMPIUcwCO+BiHtByAO5YDcMPHuLaPdgI/bZUt5gAMwzDyFHMAjvgYh7QcgDuW\nA3DDx7i2j3YCP22VLeYADMMw8hRzAI74GIe0HIA7lgNww8e4to92Aj9tlS3mAAzDMPIUcwCO+BiH\ntByAO5YDcMPHuLaPdgI/bZUt5gAMwzDyFHMAjvgYh7QcgDuWA3DDx7i2j3YCP22VLYlOB10f3Dx8\n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\n\"></div>",
+                "selectedType": "Html",
+                "pluginName": "IPython",
+                "shellId": "F0EBDA1434C5457C8DEFF11FF71BBE96",
+                "elapsedTime": 782
+            },
+            "evaluatorReader": true,
+            "lineCount": 17
+        }
+    ],
+    "namespace": {
+        "tags": [
+            "{word: 'the', frequency: 99}",
+            "{word: 'and', frequency: 68}",
+            "{word: 'of', frequency: 61}",
+            "{word: 'to', frequency: 59}",
+            "{word: 'I', frequency: 49}",
+            "{word: 'a', frequency: 42}",
+            "{word: 'my', frequency: 42}",
+            "{word: 'in', frequency: 36}",
+            "{word: 'you', frequency: 33}",
+            "{word: 'Ham.', frequency: 33}",
+            "{word: 'is', frequency: 26}",
+            "{word: 'his', frequency: 24}",
+            "{word: 'it', frequency: 23}",
+            "{word: 'not', frequency: 22}",
+            "{word: 'And', frequency: 21}",
+            "{word: 'that', frequency: 19}",
+            "{word: 'your', frequency: 19}",
+            "{word: 'with', frequency: 18}",
+            "{word: 'this', frequency: 16}",
+            "{word: 'be', frequency: 15}",
+            "{word: 'for', frequency: 13}",
+            "{word: 'he', frequency: 12}",
+            "{word: 'have', frequency: 12}",
+            "{word: 'The', frequency: 10}",
+            "{word: 'as', frequency: 10}",
+            "{word: 'but', frequency: 10}",
+            "{word: 'me', frequency: 10}",
+            "{word: 'will', frequency: 9}",
+            "{word: 'him', frequency: 8}",
+            "{word: 'are', frequency: 7}",
+            "{word: 'To', frequency: 7}",
+            "{word: 'That', frequency: 7}",
+            "{word: 'Hor.', frequency: 7}",
+            "{word: 'what', frequency: 6}",
+            "{word: 'King.', frequency: 6}",
+            "{word: 'our', frequency: 6}",
+            "{word: 'do', frequency: 6}",
+            "{word: 'so', frequency: 6}",
+            "{word: 'we', frequency: 6}",
+            "{word: 'shall', frequency: 6}",
+            "{word: 'on', frequency: 6}",
+            "{word: 'by', frequency: 5}",
+            "{word: 'no', frequency: 4}",
+            "{word: 'Pol.', frequency: 4}",
+            "{word: 'all', frequency: 4}",
+            "{word: 'But', frequency: 4}",
+            "{word: 'from', frequency: 4}",
+            "{word: 'thou', frequency: 4}",
+            "{word: 'thy', frequency: 4}",
+            "{word: 'A', frequency: 3}",
+            "{word: 'lord,', frequency: 3}",
+            "{word: 'or', frequency: 3}",
+            "{word: 'they', frequency: 3}",
+            "{word: 'at', frequency: 3}",
+            "{word: 'What', frequency: 3}",
+            "{word: 'Queen.', frequency: 3}",
+            "{word: 'As', frequency: 3}",
+            "{word: 'her', frequency: 2}",
+            "{word: 'more', frequency: 2}",
+            "{word: 'most', frequency: 2}",
+            "{word: 'My', frequency: 2}",
+            "{word: 'was', frequency: 2}",
+            "{word: 'if', frequency: 2}",
+            "{word: 'like', frequency: 2}",
+            "{word: 'good', frequency: 2}",
+            "{word: 'you,', frequency: 2}",
+            "{word: 'For', frequency: 2}",
+            "{word: 'would', frequency: 2}",
+            "{word: 'Laer.', frequency: 2}",
+            "{word: '[Enter', frequency: 1}",
+            "{word: 'let', frequency: 1}",
+            "{word: 'may', frequency: 1}",
+            "{word: 'Oph.', frequency: 1}",
+            "{word: 'O,', frequency: 1}",
+            "{word: 'very', frequency: 1}",
+            "{word: 'lord.', frequency: 1}",
+            "{word: 'How', frequency: 1}",
+            "{word: 'I'll', frequency: 1}",
+            "{word: 'know', frequency: 1}",
+            "{word: 'It', frequency: 1}",
+            "{word: 'hath', frequency: 1}",
+            "{word: 'must', frequency: 1}",
+            "{word: 'their', frequency: 1}",
+            "{word: 'some', frequency: 0}",
+            "{word: 'Ros.', frequency: 0}",
+            "{word: 'should', frequency: 0}",
+            "{word: 'am', frequency: 0}",
+            "{word: 'an', frequency: 0}",
+            "{word: 'You', frequency: 0}",
+            "{word: 'This', frequency: 0}",
+            "{word: 'come', frequency: 0}",
+            "{word: 'such', frequency: 0}",
+            "{word: 'us', frequency: 0}",
+            "{word: 'O', frequency: 0}",
+            "{word: ''tis', frequency: 0}",
+            "{word: 'Clown.', frequency: 0}",
+            "{word: 'did', frequency: 0}",
+            "{word: 'them', frequency: 0}",
+            "{word: 'make', frequency: 0}",
+            "{word: 'much', frequency: 0}"
+        ],
+        "tags1": [
+            "{'word1': 'the','frequency': 99}",
+            "{'word1': 'and','frequency': 68}",
+            "{'word1': 'of','frequency': 61}",
+            "{'word1': 'to','frequency': 59}",
+            "{'word1': 'I','frequency': 49}",
+            "{'word1': 'a','frequency': 42}",
+            "{'word1': 'my','frequency': 42}",
+            "{'word1': 'in','frequency': 36}",
+            "{'word1': 'you','frequency': 33}",
+            "{'word1': 'Ham.','frequency': 33}",
+            "{'word1': 'is','frequency': 26}",
+            "{'word1': 'his','frequency': 24}",
+            "{'word1': 'it','frequency': 23}",
+            "{'word1': 'not','frequency': 22}",
+            "{'word1': 'And','frequency': 21}",
+            "{'word1': 'that','frequency': 19}",
+            "{'word1': 'your','frequency': 19}",
+            "{'word1': 'with','frequency': 18}",
+            "{'word1': 'this','frequency': 16}",
+            "{'word1': 'be','frequency': 15}",
+            "{'word1': 'for','frequency': 13}",
+            "{'word1': 'he','frequency': 12}",
+            "{'word1': 'have','frequency': 12}",
+            "{'word1': 'The','frequency': 10}",
+            "{'word1': 'as','frequency': 10}",
+            "{'word1': 'but','frequency': 10}",
+            "{'word1': 'me','frequency': 10}",
+            "{'word1': 'will','frequency': 9}",
+            "{'word1': 'him','frequency': 8}",
+            "{'word1': 'are','frequency': 7}",
+            "{'word1': 'To','frequency': 7}",
+            "{'word1': 'That','frequency': 7}",
+            "{'word1': 'Hor.','frequency': 7}",
+            "{'word1': 'what','frequency': 6}",
+            "{'word1': 'King.','frequency': 6}",
+            "{'word1': 'our','frequency': 6}",
+            "{'word1': 'do','frequency': 6}",
+            "{'word1': 'so','frequency': 6}",
+            "{'word1': 'we','frequency': 6}",
+            "{'word1': 'shall','frequency': 6}",
+            "{'word1': 'on','frequency': 6}",
+            "{'word1': 'by','frequency': 5}",
+            "{'word1': 'no','frequency': 4}",
+            "{'word1': 'Pol.','frequency': 4}",
+            "{'word1': 'all','frequency': 4}",
+            "{'word1': 'But','frequency': 4}",
+            "{'word1': 'from','frequency': 4}",
+            "{'word1': 'thou','frequency': 4}",
+            "{'word1': 'thy','frequency': 4}",
+            "{'word1': 'A','frequency': 3}",
+            "{'word1': 'lord,','frequency': 3}",
+            "{'word1': 'or','frequency': 3}",
+            "{'word1': 'they','frequency': 3}",
+            "{'word1': 'at','frequency': 3}",
+            "{'word1': 'What','frequency': 3}",
+            "{'word1': 'Queen.','frequency': 3}",
+            "{'word1': 'As','frequency': 3}",
+            "{'word1': 'her','frequency': 2}",
+            "{'word1': 'more','frequency': 2}",
+            "{'word1': 'most','frequency': 2}",
+            "{'word1': 'My','frequency': 2}",
+            "{'word1': 'was','frequency': 2}",
+            "{'word1': 'if','frequency': 2}",
+            "{'word1': 'like','frequency': 2}",
+            "{'word1': 'good','frequency': 2}",
+            "{'word1': 'you,','frequency': 2}",
+            "{'word1': 'For','frequency': 2}",
+            "{'word1': 'would','frequency': 2}",
+            "{'word1': 'Laer.','frequency': 2}",
+            "{'word1': '[Enter','frequency': 1}",
+            "{'word1': 'let','frequency': 1}",
+            "{'word1': 'may','frequency': 1}",
+            "{'word1': 'Oph.','frequency': 1}",
+            "{'word1': 'O,','frequency': 1}",
+            "{'word1': 'very','frequency': 1}",
+            "{'word1': 'lord.','frequency': 1}",
+            "{'word1': 'How','frequency': 1}",
+            "{'word1': 'I'll','frequency': 1}",
+            "{'word1': 'know','frequency': 1}",
+            "{'word1': 'It','frequency': 1}",
+            "{'word1': 'hath','frequency': 1}",
+            "{'word1': 'must','frequency': 1}",
+            "{'word1': 'their','frequency': 1}",
+            "{'word1': 'some','frequency': 0}",
+            "{'word1': 'Ros.','frequency': 0}",
+            "{'word1': 'should','frequency': 0}",
+            "{'word1': 'am','frequency': 0}",
+            "{'word1': 'an','frequency': 0}",
+            "{'word1': 'You','frequency': 0}",
+            "{'word1': 'This','frequency': 0}",
+            "{'word1': 'come','frequency': 0}",
+            "{'word1': 'such','frequency': 0}",
+            "{'word1': 'us','frequency': 0}",
+            "{'word1': 'O','frequency': 0}",
+            "{'word1': ''tis','frequency': 0}",
+            "{'word1': 'Clown.','frequency': 0}",
+            "{'word1': 'did','frequency': 0}",
+            "{'word1': 'them','frequency': 0}",
+            "{'word1': 'make','frequency': 0}",
+            "{'word1': 'much','frequency': 0}"
+        ],
+        "tags2": [
+            "{\"word1\": 'the',\"frequency\": 99}",
+            "{\"word1\": 'and',\"frequency\": 68}",
+            "{\"word1\": 'of',\"frequency\": 61}",
+            "{\"word1\": 'to',\"frequency\": 59}",
+            "{\"word1\": 'I',\"frequency\": 49}",
+            "{\"word1\": 'a',\"frequency\": 42}",
+            "{\"word1\": 'my',\"frequency\": 42}",
+            "{\"word1\": 'in',\"frequency\": 36}",
+            "{\"word1\": 'you',\"frequency\": 33}",
+            "{\"word1\": 'Ham.',\"frequency\": 33}",
+            "{\"word1\": 'is',\"frequency\": 26}",
+            "{\"word1\": 'his',\"frequency\": 24}",
+            "{\"word1\": 'it',\"frequency\": 23}",
+            "{\"word1\": 'not',\"frequency\": 22}",
+            "{\"word1\": 'And',\"frequency\": 21}",
+            "{\"word1\": 'that',\"frequency\": 19}",
+            "{\"word1\": 'your',\"frequency\": 19}",
+            "{\"word1\": 'with',\"frequency\": 18}",
+            "{\"word1\": 'this',\"frequency\": 16}",
+            "{\"word1\": 'be',\"frequency\": 15}",
+            "{\"word1\": 'for',\"frequency\": 13}",
+            "{\"word1\": 'he',\"frequency\": 12}",
+            "{\"word1\": 'have',\"frequency\": 12}",
+            "{\"word1\": 'The',\"frequency\": 10}",
+            "{\"word1\": 'as',\"frequency\": 10}",
+            "{\"word1\": 'but',\"frequency\": 10}",
+            "{\"word1\": 'me',\"frequency\": 10}",
+            "{\"word1\": 'will',\"frequency\": 9}",
+            "{\"word1\": 'him',\"frequency\": 8}",
+            "{\"word1\": 'are',\"frequency\": 7}",
+            "{\"word1\": 'To',\"frequency\": 7}",
+            "{\"word1\": 'That',\"frequency\": 7}",
+            "{\"word1\": 'Hor.',\"frequency\": 7}",
+            "{\"word1\": 'what',\"frequency\": 6}",
+            "{\"word1\": 'King.',\"frequency\": 6}",
+            "{\"word1\": 'our',\"frequency\": 6}",
+            "{\"word1\": 'do',\"frequency\": 6}",
+            "{\"word1\": 'so',\"frequency\": 6}",
+            "{\"word1\": 'we',\"frequency\": 6}",
+            "{\"word1\": 'shall',\"frequency\": 6}",
+            "{\"word1\": 'on',\"frequency\": 6}",
+            "{\"word1\": 'by',\"frequency\": 5}",
+            "{\"word1\": 'no',\"frequency\": 4}",
+            "{\"word1\": 'Pol.',\"frequency\": 4}",
+            "{\"word1\": 'all',\"frequency\": 4}",
+            "{\"word1\": 'But',\"frequency\": 4}",
+            "{\"word1\": 'from',\"frequency\": 4}",
+            "{\"word1\": 'thou',\"frequency\": 4}",
+            "{\"word1\": 'thy',\"frequency\": 4}",
+            "{\"word1\": 'A',\"frequency\": 3}",
+            "{\"word1\": 'lord,',\"frequency\": 3}",
+            "{\"word1\": 'or',\"frequency\": 3}",
+            "{\"word1\": 'they',\"frequency\": 3}",
+            "{\"word1\": 'at',\"frequency\": 3}",
+            "{\"word1\": 'What',\"frequency\": 3}",
+            "{\"word1\": 'Queen.',\"frequency\": 3}",
+            "{\"word1\": 'As',\"frequency\": 3}",
+            "{\"word1\": 'her',\"frequency\": 2}",
+            "{\"word1\": 'more',\"frequency\": 2}",
+            "{\"word1\": 'most',\"frequency\": 2}",
+            "{\"word1\": 'My',\"frequency\": 2}",
+            "{\"word1\": 'was',\"frequency\": 2}",
+            "{\"word1\": 'if',\"frequency\": 2}",
+            "{\"word1\": 'like',\"frequency\": 2}",
+            "{\"word1\": 'good',\"frequency\": 2}",
+            "{\"word1\": 'you,',\"frequency\": 2}",
+            "{\"word1\": 'For',\"frequency\": 2}",
+            "{\"word1\": 'would',\"frequency\": 2}",
+            "{\"word1\": 'Laer.',\"frequency\": 2}",
+            "{\"word1\": '[Enter',\"frequency\": 1}",
+            "{\"word1\": 'let',\"frequency\": 1}",
+            "{\"word1\": 'may',\"frequency\": 1}",
+            "{\"word1\": 'Oph.',\"frequency\": 1}",
+            "{\"word1\": 'O,',\"frequency\": 1}",
+            "{\"word1\": 'very',\"frequency\": 1}",
+            "{\"word1\": 'lord.',\"frequency\": 1}",
+            "{\"word1\": 'How',\"frequency\": 1}",
+            "{\"word1\": 'I'll',\"frequency\": 1}",
+            "{\"word1\": 'know',\"frequency\": 1}",
+            "{\"word1\": 'It',\"frequency\": 1}",
+            "{\"word1\": 'hath',\"frequency\": 1}",
+            "{\"word1\": 'must',\"frequency\": 1}",
+            "{\"word1\": 'their',\"frequency\": 1}",
+            "{\"word1\": 'some',\"frequency\": 0}",
+            "{\"word1\": 'Ros.',\"frequency\": 0}",
+            "{\"word1\": 'should',\"frequency\": 0}",
+            "{\"word1\": 'am',\"frequency\": 0}",
+            "{\"word1\": 'an',\"frequency\": 0}",
+            "{\"word1\": 'You',\"frequency\": 0}",
+            "{\"word1\": 'This',\"frequency\": 0}",
+            "{\"word1\": 'come',\"frequency\": 0}",
+            "{\"word1\": 'such',\"frequency\": 0}",
+            "{\"word1\": 'us',\"frequency\": 0}",
+            "{\"word1\": 'O',\"frequency\": 0}",
+            "{\"word1\": ''tis',\"frequency\": 0}",
+            "{\"word1\": 'Clown.',\"frequency\": 0}",
+            "{\"word1\": 'did',\"frequency\": 0}",
+            "{\"word1\": 'them',\"frequency\": 0}",
+            "{\"word1\": 'make',\"frequency\": 0}",
+            "{\"word1\": 'much',\"frequency\": 0}"
+        ],
+        "tags3": [
+            "{\"word1\": \"the\", \"frequency\": 99}",
+            "{\"word1\": \"and\", \"frequency\": 68}",
+            "{\"word1\": \"of\", \"frequency\": 61}",
+            "{\"word1\": \"to\", \"frequency\": 59}",
+            "{\"word1\": \"I\", \"frequency\": 49}",
+            "{\"word1\": \"a\", \"frequency\": 42}",
+            "{\"word1\": \"my\", \"frequency\": 42}",
+            "{\"word1\": \"in\", \"frequency\": 36}",
+            "{\"word1\": \"you\", \"frequency\": 33}",
+            "{\"word1\": \"Ham.\", \"frequency\": 33}",
+            "{\"word1\": \"is\", \"frequency\": 26}",
+            "{\"word1\": \"his\", \"frequency\": 24}",
+            "{\"word1\": \"it\", \"frequency\": 23}",
+            "{\"word1\": \"not\", \"frequency\": 22}",
+            "{\"word1\": \"And\", \"frequency\": 21}",
+            "{\"word1\": \"that\", \"frequency\": 19}",
+            "{\"word1\": \"your\", \"frequency\": 19}",
+            "{\"word1\": \"with\", \"frequency\": 18}",
+            "{\"word1\": \"this\", \"frequency\": 16}",
+            "{\"word1\": \"be\", \"frequency\": 15}",
+            "{\"word1\": \"for\", \"frequency\": 13}",
+            "{\"word1\": \"he\", \"frequency\": 12}",
+            "{\"word1\": \"have\", \"frequency\": 12}",
+            "{\"word1\": \"The\", \"frequency\": 10}",
+            "{\"word1\": \"as\", \"frequency\": 10}",
+            "{\"word1\": \"but\", \"frequency\": 10}",
+            "{\"word1\": \"me\", \"frequency\": 10}",
+            "{\"word1\": \"will\", \"frequency\": 9}",
+            "{\"word1\": \"him\", \"frequency\": 8}",
+            "{\"word1\": \"are\", \"frequency\": 7}",
+            "{\"word1\": \"To\", \"frequency\": 7}",
+            "{\"word1\": \"That\", \"frequency\": 7}",
+            "{\"word1\": \"Hor.\", \"frequency\": 7}",
+            "{\"word1\": \"what\", \"frequency\": 6}",
+            "{\"word1\": \"King.\", \"frequency\": 6}",
+            "{\"word1\": \"our\", \"frequency\": 6}",
+            "{\"word1\": \"do\", \"frequency\": 6}",
+            "{\"word1\": \"so\", \"frequency\": 6}",
+            "{\"word1\": \"we\", \"frequency\": 6}",
+            "{\"word1\": \"shall\", \"frequency\": 6}",
+            "{\"word1\": \"on\", \"frequency\": 6}",
+            "{\"word1\": \"by\", \"frequency\": 5}",
+            "{\"word1\": \"no\", \"frequency\": 4}",
+            "{\"word1\": \"Pol.\", \"frequency\": 4}",
+            "{\"word1\": \"all\", \"frequency\": 4}",
+            "{\"word1\": \"But\", \"frequency\": 4}",
+            "{\"word1\": \"from\", \"frequency\": 4}",
+            "{\"word1\": \"thou\", \"frequency\": 4}",
+            "{\"word1\": \"thy\", \"frequency\": 4}",
+            "{\"word1\": \"A\", \"frequency\": 3}",
+            "{\"word1\": \"lord,\", \"frequency\": 3}",
+            "{\"word1\": \"or\", \"frequency\": 3}",
+            "{\"word1\": \"they\", \"frequency\": 3}",
+            "{\"word1\": \"at\", \"frequency\": 3}",
+            "{\"word1\": \"What\", \"frequency\": 3}",
+            "{\"word1\": \"Queen.\", \"frequency\": 3}",
+            "{\"word1\": \"As\", \"frequency\": 3}",
+            "{\"word1\": \"her\", \"frequency\": 2}",
+            "{\"word1\": \"more\", \"frequency\": 2}",
+            "{\"word1\": \"most\", \"frequency\": 2}",
+            "{\"word1\": \"My\", \"frequency\": 2}",
+            "{\"word1\": \"was\", \"frequency\": 2}",
+            "{\"word1\": \"if\", \"frequency\": 2}",
+            "{\"word1\": \"like\", \"frequency\": 2}",
+            "{\"word1\": \"good\", \"frequency\": 2}",
+            "{\"word1\": \"you,\", \"frequency\": 2}",
+            "{\"word1\": \"For\", \"frequency\": 2}",
+            "{\"word1\": \"would\", \"frequency\": 2}",
+            "{\"word1\": \"Laer.\", \"frequency\": 2}",
+            "{\"word1\": \"[Enter\", \"frequency\": 1}",
+            "{\"word1\": \"let\", \"frequency\": 1}",
+            "{\"word1\": \"may\", \"frequency\": 1}",
+            "{\"word1\": \"Oph.\", \"frequency\": 1}",
+            "{\"word1\": \"O,\", \"frequency\": 1}",
+            "{\"word1\": \"very\", \"frequency\": 1}",
+            "{\"word1\": \"lord.\", \"frequency\": 1}",
+            "{\"word1\": \"How\", \"frequency\": 1}",
+            "{\"word1\": \"I'll\", \"frequency\": 1}",
+            "{\"word1\": \"know\", \"frequency\": 1}",
+            "{\"word1\": \"It\", \"frequency\": 1}",
+            "{\"word1\": \"hath\", \"frequency\": 1}",
+            "{\"word1\": \"must\", \"frequency\": 1}",
+            "{\"word1\": \"their\", \"frequency\": 1}",
+            "{\"word1\": \"some\", \"frequency\": 0}",
+            "{\"word1\": \"Ros.\", \"frequency\": 0}",
+            "{\"word1\": \"should\", \"frequency\": 0}",
+            "{\"word1\": \"am\", \"frequency\": 0}",
+            "{\"word1\": \"an\", \"frequency\": 0}",
+            "{\"word1\": \"You\", \"frequency\": 0}",
+            "{\"word1\": \"This\", \"frequency\": 0}",
+            "{\"word1\": \"come\", \"frequency\": 0}",
+            "{\"word1\": \"such\", \"frequency\": 0}",
+            "{\"word1\": \"us\", \"frequency\": 0}",
+            "{\"word1\": \"O\", \"frequency\": 0}",
+            "{\"word1\": \"'tis\", \"frequency\": 0}",
+            "{\"word1\": \"Clown.\", \"frequency\": 0}",
+            "{\"word1\": \"did\", \"frequency\": 0}",
+            "{\"word1\": \"them\", \"frequency\": 0}",
+            "{\"word1\": \"make\", \"frequency\": 0}",
+            "{\"word1\": \"much\", \"frequency\": 0}"
+        ],
+        "textTags": {
+            "type": "TableDisplay",
+            "subtype": "ListOfMaps",
+            "columnNames": [
+                "frequency",
+                "word"
+            ],
+            "values": [
+                [
+                    198,
+                    "lord"
+                ],
+                [
+                    158,
+                    "have"
+                ],
+                [
+                    144,
+                    "will"
+                ],
+                [
+                    130,
+                    "King"
+                ],
+                [
+                    103,
+                    "what"
+                ],
+                [
+                    100,
+                    "shall"
+                ],
+                [
+                    87,
+                    "Hamlet"
+                ],
+                [
+                    85,
+                    "Queen"
+                ],
+                [
+                    81,
+                    "thou"
+                ],
+                [
+                    80,
+                    "more"
+                ],
+                [
+                    78,
+                    "What"
+                ],
+                [
+                    75,
+                    "from"
+                ],
+                [
+                    67,
+                    "they"
+                ],
+                [
+                    65,
+                    "come"
+                ],
+                [
+                    65,
+                    "good"
+                ],
+                [
+                    63,
+                    "know"
+                ],
+                [
+                    61,
+                    "them"
+                ],
+                [
+                    61,
+                    "like"
+                ],
+                [
+                    59,
+                    "most"
+                ],
+                [
+                    56,
+                    "would"
+                ],
+                [
+                    56,
+                    "well"
+                ],
+                [
+                    54,
+                    "love"
+                ],
+                [
+                    52,
+                    "Enter"
+                ],
+                [
+                    51,
+                    "Laer"
+                ],
+                [
+                    48,
+                    "there"
+                ],
+                [
+                    46,
+                    "thee"
+                ],
+                [
+                    46,
+                    "very"
+                ],
+                [
+                    45,
+                    "king"
+                ],
+                [
+                    44,
+                    "hath"
+                ],
+                [
+                    43,
+                    "must"
+                ],
+                [
+                    42,
+                    "speak"
+                ],
+                [
+                    42,
+                    "their"
+                ],
+                [
+                    40,
+                    "some"
+                ],
+                [
+                    40,
+                    "should"
+                ],
+                [
+                    38,
+                    "father"
+                ],
+                [
+                    37,
+                    "such"
+                ],
+                [
+                    35,
+                    "much"
+                ],
+                [
+                    34,
+                    "make"
+                ],
+                [
+                    34,
+                    "Clown"
+                ],
+                [
+                    33,
+                    "think"
+                ],
+                [
+                    33,
+                    "Laertes"
+                ],
+                [
+                    32,
+                    "then"
+                ],
+                [
+                    32,
+                    "Horatio"
+                ],
+                [
+                    31,
+                    "which"
+                ],
+                [
+                    29,
+                    "here"
+                ],
+                [
+                    29,
+                    "time"
+                ],
+                [
+                    28,
+                    "these"
+                ],
+                [
+                    28,
+                    "upon"
+                ],
+                [
+                    27,
+                    "tell"
+                ],
+                [
+                    27,
+                    "give"
+                ],
+                [
+                    27,
+                    "heaven"
+                ],
+                [
+                    26,
+                    "than"
+                ],
+                [
+                    26,
+                    "Exit"
+                ],
+                [
+                    25,
+                    "death"
+                ],
+                [
+                    23,
+                    "Polonius"
+                ],
+                [
+                    23,
+                    "Exeunt"
+                ],
+                [
+                    22,
+                    "Guil"
+                ],
+                [
+                    22,
+                    "play"
+                ],
+                [
+                    21,
+                    "soul"
+                ],
+                [
+                    20,
+                    "life"
+                ],
+                [
+                    19,
+                    "mother"
+                ],
+                [
+                    18,
+                    "night"
+                ],
+                [
+                    18,
+                    "hear"
+                ],
+                [
+                    17,
+                    "dead"
+                ],
+                [
+                    17,
+                    "when"
+                ],
+                [
+                    17,
+                    "again"
+                ],
+                [
+                    17,
+                    "thus"
+                ],
+                [
+                    17,
+                    "made"
+                ],
+                [
+                    16,
+                    "mine"
+                ],
+                [
+                    16,
+                    "Guildenstern"
+                ],
+                [
+                    16,
+                    "Ophelia"
+                ],
+                [
+                    16,
+                    "might"
+                ],
+                [
+                    15,
+                    "where"
+                ],
+                [
+                    15,
+                    "cannot"
+                ],
+                [
+                    14,
+                    "matter"
+                ],
+                [
+                    14,
+                    "dear"
+                ],
+                [
+                    14,
+                    "down"
+                ],
+                [
+                    14,
+                    "heart"
+                ],
+                [
+                    14,
+                    "take"
+                ],
+                [
+                    14,
+                    "into"
+                ],
+                [
+                    14,
+                    "could"
+                ],
+                [
+                    13,
+                    "nature"
+                ],
+                [
+                    13,
+                    "been"
+                ],
+                [
+                    13,
+                    "head"
+                ],
+                [
+                    13,
+                    "Rosencrantz"
+                ],
+                [
+                    13,
+                    "nothing"
+                ],
+                [
+                    13,
+                    "great"
+                ],
+                [
+                    13,
+                    "Ghost"
+                ],
+                [
+                    12,
+                    "Where"
+                ],
+                [
+                    12,
+                    "leave"
+                ],
+                [
+                    12,
+                    "When"
+                ],
+                [
+                    11,
+                    "queen"
+                ],
+                [
+                    11,
+                    "earth"
+                ],
+                [
+                    11,
+                    "were"
+                ],
+                [
+                    11,
+                    "world"
+                ],
+                [
+                    11,
+                    "part"
+                ],
+                [
+                    11,
+                    "Good"
+                ],
+                [
+                    10,
+                    "doth"
+                ],
+                [
+                    10,
+                    "true"
+                ],
+                [
+                    10,
+                    "comes"
+                ],
+                [
+                    10,
+                    "pray"
+                ],
+                [
+                    10,
+                    "sweet"
+                ],
+                [
+                    10,
+                    "look"
+                ],
+                [
+                    10,
+                    "itself"
+                ],
+                [
+                    10,
+                    "Come"
+                ],
+                [
+                    9,
+                    "whose"
+                ],
+                [
+                    9,
+                    "hold"
+                ],
+                [
+                    9,
+                    "seen"
+                ],
+                [
+                    9,
+                    "They"
+                ],
+                [
+                    9,
+                    "away"
+                ],
+                [
+                    9,
+                    "indeed"
+                ],
+                [
+                    9,
+                    "show"
+                ],
+                [
+                    9,
+                    "both"
+                ],
+                [
+                    9,
+                    "does"
+                ],
+                [
+                    8,
+                    "call"
+                ],
+                [
+                    8,
+                    "fair"
+                ],
+                [
+                    8,
+                    "eyes"
+                ],
+                [
+                    8,
+                    "Give"
+                ],
+                [
+                    8,
+                    "done"
+                ],
+                [
+                    8,
+                    "Which"
+                ],
+                [
+                    7,
+                    "Scene"
+                ],
+                [
+                    7,
+                    "madness"
+                ],
+                [
+                    7,
+                    "those"
+                ],
+                [
+                    7,
+                    "poor"
+                ],
+                [
+                    7,
+                    "fathers"
+                ],
+                [
+                    7,
+                    "himself"
+                ],
+                [
+                    7,
+                    "Denmark"
+                ],
+                [
+                    7,
+                    "means"
+                ],
+                [
+                    7,
+                    "England"
+                ],
+                [
+                    6,
+                    "Lord"
+                ],
+                [
+                    6,
+                    "Then"
+                ],
+                [
+                    6,
+                    "against"
+                ],
+                [
+                    6,
+                    "hand"
+                ],
+                [
+                    6,
+                    "Well"
+                ],
+                [
+                    5,
+                    "never"
+                ],
+                [
+                    5,
+                    "thing"
+                ],
+                [
+                    5,
+                    "little"
+                ],
+                [
+                    5,
+                    "many"
+                ],
+                [
+                    5,
+                    "blood"
+                ],
+                [
+                    5,
+                    "within"
+                ],
+                [
+                    5,
+                    "fear"
+                ],
+                [
+                    5,
+                    "words"
+                ],
+                [
+                    4,
+                    "Will"
+                ],
+                [
+                    4,
+                    "before"
+                ],
+                [
+                    4,
+                    "noble"
+                ],
+                [
+                    4,
+                    "find"
+                ],
+                [
+                    4,
+                    "body"
+                ],
+                [
+                    4,
+                    "cause"
+                ],
+                [
+                    4,
+                    "keep"
+                ],
+                [
+                    4,
+                    "friends"
+                ],
+                [
+                    3,
+                    "still"
+                ],
+                [
+                    3,
+                    "first"
+                ],
+                [
+                    3,
+                    "speech"
+                ],
+                [
+                    3,
+                    "believe"
+                ],
+                [
+                    3,
+                    "majesty"
+                ],
+                [
+                    3,
+                    "else"
+                ],
+                [
+                    3,
+                    "though"
+                ],
+                [
+                    3,
+                    "once"
+                ],
+                [
+                    3,
+                    "sword"
+                ],
+                [
+                    2,
+                    "even"
+                ],
+                [
+                    2,
+                    "watch"
+                ],
+                [
+                    2,
+                    "said"
+                ],
+                [
+                    2,
+                    "thoughts"
+                ],
+                [
+                    2,
+                    "room"
+                ],
+                [
+                    2,
+                    "live"
+                ],
+                [
+                    2,
+                    "Fortinbras"
+                ],
+                [
+                    2,
+                    "without"
+                ],
+                [
+                    2,
+                    "follow"
+                ],
+                [
+                    2,
+                    "hast"
+                ],
+                [
+                    2,
+                    "youth"
+                ],
+                [
+                    2,
+                    "question"
+                ],
+                [
+                    2,
+                    "young"
+                ],
+                [
+                    2,
+                    "about"
+                ],
+                [
+                    2,
+                    "state"
+                ],
+                [
+                    2,
+                    "Have"
+                ],
+                [
+                    2,
+                    "tongue"
+                ],
+                [
+                    2,
+                    "Upon"
+                ],
+                [
+                    2,
+                    "other"
+                ],
+                [
+                    1,
+                    "better"
+                ],
+                [
+                    1,
+                    "There"
+                ],
+                [
+                    1,
+                    "heard"
+                ],
+                [
+                    1,
+                    "yourself"
+                ],
+                [
+                    1,
+                    "makes"
+                ],
+                [
+                    1,
+                    "stand"
+                ],
+                [
+                    1,
+                    "Castle"
+                ],
+                [
+                    1,
+                    "gone"
+                ],
+                [
+                    1,
+                    "reason"
+                ],
+                [
+                    1,
+                    "players"
+                ],
+                [
+                    1,
+                    "long"
+                ],
+                [
+                    1,
+                    "bear"
+                ],
+                [
+                    1,
+                    "rest"
+                ],
+                [
+                    0,
+                    "ever"
+                ],
+                [
+                    0,
+                    "grief"
+                ],
+                [
+                    0,
+                    "answer"
+                ],
+                [
+                    0,
+                    "gentleman"
+                ],
+                [
+                    0,
+                    "Gertrude"
+                ],
+                [
+                    0,
+                    "thine"
+                ],
+                [
+                    0,
+                    "between"
+                ],
+                [
+                    0,
+                    "Than"
+                ],
+                [
+                    0,
+                    "duty"
+                ]
+            ],
+            "types": [
+                "double",
+                "string"
+            ]
+        },
+        "textTags1": [
+            "{\"word\": \"299\", \"frequency\": Ham.}",
+            "{\"word\": \"184\", \"frequency\": your}",
+            "{\"word\": \"182\", \"frequency\": with}",
+            "{\"word\": \"129\", \"frequency\": have}",
+            "{\"word\": \"105\", \"frequency\": will}",
+            "{\"word\": \"87\", \"frequency\": Hor.}",
+            "{\"word\": \"85\", \"frequency\": what}",
+            "{\"word\": \"85\", \"frequency\": King.}",
+            "{\"word\": \"79\", \"frequency\": shall}",
+            "{\"word\": \"66\", \"frequency\": Pol.}",
+            "{\"word\": \"64\", \"frequency\": from}",
+            "{\"word\": \"63\", \"frequency\": thou}",
+            "{\"word\": \"60\", \"frequency\": lord,}",
+            "{\"word\": \"58\", \"frequency\": they}",
+            "{\"word\": \"57\", \"frequency\": What}",
+            "{\"word\": \"56\", \"frequency\": Queen.}",
+            "{\"word\": \"52\", \"frequency\": more}",
+            "{\"word\": \"52\", \"frequency\": most}",
+            "{\"word\": \"51\", \"frequency\": like}",
+            "{\"word\": \"50\", \"frequency\": good}",
+            "{\"word\": \"47\", \"frequency\": you,}",
+            "{\"word\": \"47\", \"frequency\": would}",
+            "{\"word\": \"46\", \"frequency\": Laer.}",
+            "{\"word\": \"45\", \"frequency\": [Enter}",
+            "{\"word\": \"42\", \"frequency\": Oph.}",
+            "{\"word\": \"41\", \"frequency\": very}",
+            "{\"word\": \"41\", \"frequency\": lord.}",
+            "{\"word\": \"41\", \"frequency\": I'll}",
+            "{\"word\": \"41\", \"frequency\": know}",
+            "{\"word\": \"39\", \"frequency\": hath}",
+            "{\"word\": \"39\", \"frequency\": must}",
+            "{\"word\": \"39\", \"frequency\": their}",
+            "{\"word\": \"37\", \"frequency\": some}",
+            "{\"word\": \"36\", \"frequency\": Ros.}",
+            "{\"word\": \"36\", \"frequency\": should}",
+            "{\"word\": \"34\", \"frequency\": come}",
+            "{\"word\": \"32\", \"frequency\": such}",
+            "{\"word\": \"31\", \"frequency\": 'tis}",
+            "{\"word\": \"31\", \"frequency\": Clown.}",
+            "{\"word\": \"30\", \"frequency\": them}",
+            "{\"word\": \"30\", \"frequency\": make}",
+            "{\"word\": \"29\", \"frequency\": much}",
+            "{\"word\": \"29\", \"frequency\": With}",
+            "{\"word\": \"28\", \"frequency\": love}",
+            "{\"word\": \"26\", \"frequency\": there}",
+            "{\"word\": \"25\", \"frequency\": upon}",
+            "{\"word\": \"25\", \"frequency\": than}",
+            "{\"word\": \"25\", \"frequency\": give}",
+            "{\"word\": \"25\", \"frequency\": think}",
+            "{\"word\": \"23\", \"frequency\": speak}",
+            "{\"word\": \"23\", \"frequency\": these}",
+            "{\"word\": \"23\", \"frequency\": tell}",
+            "{\"word\": \"23\", \"frequency\": which}",
+            "{\"word\": \"23\", \"frequency\": Mar.}",
+            "{\"word\": \"22\", \"frequency\": thee}",
+            "{\"word\": \"20\", \"frequency\": Guil.}",
+            "{\"word\": \"17\", \"frequency\": time}",
+            "{\"word\": \"17\", \"frequency\": when}",
+            "{\"word\": \"17\", \"frequency\": Hamlet}",
+            "{\"word\": \"16\", \"frequency\": take}",
+            "{\"word\": \"16\", \"frequency\": sir,}",
+            "{\"word\": \"16\", \"frequency\": lord?}",
+            "{\"word\": \"16\", \"frequency\": might}",
+            "{\"word\": \"15\", \"frequency\": here}",
+            "{\"word\": \"15\", \"frequency\": Why,}",
+            "{\"word\": \"15\", \"frequency\": well}",
+            "{\"word\": \"15\", \"frequency\": into}",
+            "{\"word\": \"15\", \"frequency\": dear}",
+            "{\"word\": \"15\", \"frequency\": father}",
+            "{\"word\": \"15\", \"frequency\": where}",
+            "{\"word\": \"15\", \"frequency\": king}",
+            "{\"word\": \"15\", \"frequency\": made}",
+            "{\"word\": \"14\", \"frequency\": could}",
+            "{\"word\": \"14\", \"frequency\": 'Tis}",
+            "{\"word\": \"14\", \"frequency\": him,}",
+            "{\"word\": \"14\", \"frequency\": When}",
+            "{\"word\": \"14\", \"frequency\": Osr.}",
+            "{\"word\": \"14\", \"frequency\": Hamlet,}",
+            "{\"word\": \"14\", \"frequency\": been}",
+            "{\"word\": \"13\", \"frequency\": great}",
+            "{\"word\": \"13\", \"frequency\": cannot}",
+            "{\"word\": \"13\", \"frequency\": were}",
+            "{\"word\": \"12\", \"frequency\": doth}",
+            "{\"word\": \"12\", \"frequency\": mine}",
+            "{\"word\": \"12\", \"frequency\": Where}",
+            "{\"word\": \"11\", \"frequency\": does}",
+            "{\"word\": \"11\", \"frequency\": But,}",
+            "{\"word\": \"11\", \"frequency\": you.}",
+            "{\"word\": \"11\", \"frequency\": him.}",
+            "{\"word\": \"11\", \"frequency\": whose}",
+            "{\"word\": \"11\", \"frequency\": now,}",
+            "{\"word\": \"11\", \"frequency\": Nay,}",
+            "{\"word\": \"11\", \"frequency\": hear}",
+            "{\"word\": \"11\", \"frequency\": [Exeunt}",
+            "{\"word\": \"11\", \"frequency\": hold}",
+            "{\"word\": \"11\", \"frequency\": Ber.}",
+            "{\"word\": \"11\", \"frequency\": Good}",
+            "{\"word\": \"11\", \"frequency\": call}",
+            "{\"word\": \"11\", \"frequency\": thus}",
+            "{\"word\": \"10\", \"frequency\": Scene}",
+            "{\"word\": \"10\", \"frequency\": Give}",
+            "{\"word\": \"10\", \"frequency\": poor}",
+            "{\"word\": \"10\", \"frequency\": look}",
+            "{\"word\": \"10\", \"frequency\": those}",
+            "{\"word\": \"10\", \"frequency\": itself}",
+            "{\"word\": \"9\", \"frequency\": Polonius.]}",
+            "{\"word\": \"9\", \"frequency\": show}",
+            "{\"word\": \"9\", \"frequency\": [Exit.]}",
+            "{\"word\": \"9\", \"frequency\": pray}",
+            "{\"word\": \"9\", \"frequency\": [Exit}",
+            "{\"word\": \"9\", \"frequency\": Which}",
+            "{\"word\": \"8\", \"frequency\": Then}",
+            "{\"word\": \"8\", \"frequency\": leave}",
+            "{\"word\": \"8\", \"frequency\": then}",
+            "{\"word\": \"8\", \"frequency\": comes}",
+            "{\"word\": \"8\", \"frequency\": both}",
+            "{\"word\": \"8\", \"frequency\": Laertes,}",
+            "{\"word\": \"8\", \"frequency\": against}",
+            "{\"word\": \"8\", \"frequency\": not,}",
+            "{\"word\": \"8\", \"frequency\": father's}",
+            "{\"word\": \"8\", \"frequency\": part}",
+            "{\"word\": \"8\", \"frequency\": sweet}",
+            "{\"word\": \"7\", \"frequency\": They}",
+            "{\"word\": \"7\", \"frequency\": many}",
+            "{\"word\": \"7\", \"frequency\": world}",
+            "{\"word\": \"7\", \"frequency\": Your}",
+            "{\"word\": \"7\", \"frequency\": that,}",
+            "{\"word\": \"7\", \"frequency\": Will}",
+            "{\"word\": \"7\", \"frequency\": noble}",
+            "{\"word\": \"7\", \"frequency\": Come,}",
+            "{\"word\": \"7\", \"frequency\": seen}",
+            "{\"word\": \"7\", \"frequency\": dead}",
+            "{\"word\": \"7\", \"frequency\": soul}",
+            "{\"word\": \"7\", \"frequency\": find}",
+            "{\"word\": \"7\", \"frequency\": head}",
+            "{\"word\": \"7\", \"frequency\": nothing}",
+            "{\"word\": \"6\", \"frequency\": play}",
+            "{\"word\": \"6\", \"frequency\": And,}",
+            "{\"word\": \"6\", \"frequency\": heaven}",
+            "{\"word\": \"6\", \"frequency\": never}",
+            "{\"word\": \"6\", \"frequency\": Horatio,}",
+            "{\"word\": \"6\", \"frequency\": keep}",
+            "{\"word\": \"6\", \"frequency\": though}",
+            "{\"word\": \"6\", \"frequency\": this,}",
+            "{\"word\": \"5\", \"frequency\": fair}",
+            "{\"word\": \"5\", \"frequency\": death}",
+            "{\"word\": \"5\", \"frequency\": Have}",
+            "{\"word\": \"5\", \"frequency\": then,}",
+            "{\"word\": \"5\", \"frequency\": little}",
+            "{\"word\": \"5\", \"frequency\": believe}",
+            "{\"word\": \"5\", \"frequency\": Rosencrantz}",
+            "{\"word\": \"5\", \"frequency\": Upon}",
+            "{\"word\": \"5\", \"frequency\": well,}",
+            "{\"word\": \"5\", \"frequency\": nature}",
+            "{\"word\": \"5\", \"frequency\": room}",
+            "{\"word\": \"5\", \"frequency\": young}",
+            "{\"word\": \"5\", \"frequency\": makes}",
+            "{\"word\": \"5\", \"frequency\": Guildenstern.]}",
+            "{\"word\": \"5\", \"frequency\": true}",
+            "{\"word\": \"5\", \"frequency\": Ghost.}",
+            "{\"word\": \"5\", \"frequency\": lord;}",
+            "{\"word\": \"5\", \"frequency\": King}",
+            "{\"word\": \"5\", \"frequency\": Castle.}",
+            "{\"word\": \"4\", \"frequency\": Than}",
+            "{\"word\": \"4\", \"frequency\": hast}",
+            "{\"word\": \"4\", \"frequency\": means}",
+            "{\"word\": \"4\", \"frequency\": life}",
+            "{\"word\": \"4\", \"frequency\": between}",
+            "{\"word\": \"4\", \"frequency\": you?}",
+            "{\"word\": \"4\", \"frequency\": even}",
+            "{\"word\": \"4\", \"frequency\": before}",
+            "{\"word\": \"4\", \"frequency\": thing}",
+            "{\"word\": \"4\", \"frequency\": [Exeunt.]}",
+            "{\"word\": \"4\", \"frequency\": Rey.}",
+            "{\"word\": \"4\", \"frequency\": bear}",
+            "{\"word\": \"4\", \"frequency\": about}",
+            "{\"word\": \"4\", \"frequency\": without}",
+            "{\"word\": \"4\", \"frequency\": night,}",
+            "{\"word\": \"4\", \"frequency\": Thou}",
+            "{\"word\": \"4\", \"frequency\": words}",
+            "{\"word\": \"3\", \"frequency\": What,}",
+            "{\"word\": \"3\", \"frequency\": sent}",
+            "{\"word\": \"3\", \"frequency\": Ophelia,}",
+            "{\"word\": \"3\", \"frequency\": sir.}",
+            "{\"word\": \"3\", \"frequency\": There's}",
+            "{\"word\": \"3\", \"frequency\": hand}",
+            "{\"word\": \"3\", \"frequency\": live}",
+            "{\"word\": \"3\", \"frequency\": [Sings.]}",
+            "{\"word\": \"3\", \"frequency\": you:}",
+            "{\"word\": \"3\", \"frequency\": Most}",
+            "{\"word\": \"3\", \"frequency\": matter}",
+            "{\"word\": \"3\", \"frequency\": thoughts}",
+            "{\"word\": \"3\", \"frequency\": lord!}",
+            "{\"word\": \"3\", \"frequency\": first}",
+            "{\"word\": \"3\", \"frequency\": indeed,}",
+            "{\"word\": \"3\", \"frequency\": Hamlet.}",
+            "{\"word\": \"3\", \"frequency\": earth}",
+            "{\"word\": \"3\", \"frequency\": mother}",
+            "{\"word\": \"3\", \"frequency\": say,}",
+            "{\"word\": \"3\", \"frequency\": and,}",
+            "{\"word\": \"3\", \"frequency\": know,}",
+            "{\"word\": \"2\", \"frequency\": Would}",
+            "{\"word\": \"2\", \"frequency\": night}",
+            "{\"word\": \"2\", \"frequency\": There}",
+            "{\"word\": \"2\", \"frequency\": come,}",
+            "{\"word\": \"2\", \"frequency\": else}",
+            "{\"word\": \"2\", \"frequency\": cause}",
+            "{\"word\": \"2\", \"frequency\": king,}",
+            "{\"word\": \"2\", \"frequency\": ever}",
+            "{\"word\": \"2\", \"frequency\": better}",
+            "{\"word\": \"2\", \"frequency\": down}",
+            "{\"word\": \"2\", \"frequency\": Lord}",
+            "{\"word\": \"2\", \"frequency\": till}",
+            "{\"word\": \"2\", \"frequency\": youth}",
+            "{\"word\": \"2\", \"frequency\": That,}",
+            "{\"word\": \"2\", \"frequency\": body}",
+            "{\"word\": \"2\", \"frequency\": From}",
+            "{\"word\": \"2\", \"frequency\": love,}",
+            "{\"word\": \"2\", \"frequency\": o'er}",
+            "{\"word\": \"2\", \"frequency\": death,}",
+            "{\"word\": \"2\", \"frequency\": life,}",
+            "{\"word\": \"2\", \"frequency\": stand}",
+            "{\"word\": \"2\", \"frequency\": Sir,}",
+            "{\"word\": \"2\", \"frequency\": fear}",
+            "{\"word\": \"2\", \"frequency\": other}",
+            "{\"word\": \"1\", \"frequency\": therefore}",
+            "{\"word\": \"1\", \"frequency\": them.}",
+            "{\"word\": \"1\", \"frequency\": things}",
+            "{\"word\": \"1\", \"frequency\": thousand}",
+            "{\"word\": \"1\", \"frequency\": rest}",
+            "{\"word\": \"1\", \"frequency\": last}",
+            "{\"word\": \"1\", \"frequency\": majesty}",
+            "{\"word\": \"1\", \"frequency\": Look}",
+            "{\"word\": \"1\", \"frequency\": bring}",
+            "{\"word\": \"1\", \"frequency\": away}",
+            "{\"word\": \"1\", \"frequency\": Alas,}",
+            "{\"word\": \"1\", \"frequency\": Now,}",
+            "{\"word\": \"1\", \"frequency\": heart}",
+            "{\"word\": \"1\", \"frequency\": madness}",
+            "{\"word\": \"1\", \"frequency\": within}",
+            "{\"word\": \"1\", \"frequency\": form}",
+            "{\"word\": \"1\", \"frequency\": soul,}",
+            "{\"word\": \"1\", \"frequency\": same}",
+            "{\"word\": \"1\", \"frequency\": that's}",
+            "{\"word\": \"1\", \"frequency\": queen}",
+            "{\"word\": \"1\", \"frequency\": players}",
+            "{\"word\": \"1\", \"frequency\": follow}",
+            "{\"word\": \"1\", \"frequency\": kind}",
+            "{\"word\": \"1\", \"frequency\": long}",
+            "{\"word\": \"1\", \"frequency\": once}",
+            "{\"word\": \"1\", \"frequency\": something}",
+            "{\"word\": \"1\", \"frequency\": King,}",
+            "{\"word\": \"1\", \"frequency\": this?}",
+            "{\"word\": \"0\", \"frequency\": foul}",
+            "{\"word\": \"0\", \"frequency\": second}",
+            "{\"word\": \"0\", \"frequency\": wind}",
+            "{\"word\": \"0\", \"frequency\": well.}",
+            "{\"word\": \"0\", \"frequency\": best}",
+            "{\"word\": \"0\", \"frequency\": man,}",
+            "{\"word\": \"0\", \"frequency\": Gertrude,}",
+            "{\"word\": \"0\", \"frequency\": e'en}",
+            "{\"word\": \"0\", \"frequency\": grace}",
+            "{\"word\": \"0\", \"frequency\": thee,}",
+            "{\"word\": \"0\", \"frequency\": Hamlet.]}",
+            "{\"word\": \"0\", \"frequency\": Queen}",
+            "{\"word\": \"0\", \"frequency\": haste}",
+            "{\"word\": \"0\", \"frequency\": Make}",
+            "{\"word\": \"0\", \"frequency\": heard}",
+            "{\"word\": \"0\", \"frequency\": still}",
+            "{\"word\": \"0\", \"frequency\": Till}",
+            "{\"word\": \"0\", \"frequency\": you;}",
+            "{\"word\": \"0\", \"frequency\": Take}",
+            "{\"word\": \"0\", \"frequency\": him:}",
+            "{\"word\": \"0\", \"frequency\": himself}",
+            "{\"word\": \"0\", \"frequency\": draw}",
+            "{\"word\": \"0\", \"frequency\": thank}",
+            "{\"word\": \"0\", \"frequency\": will,}",
+            "{\"word\": \"0\", \"frequency\": here,}",
+            "{\"word\": \"0\", \"frequency\": thine}",
+            "{\"word\": \"0\", \"frequency\": eyes}",
+            "{\"word\": \"0\", \"frequency\": again}",
+            "{\"word\": \"0\", \"frequency\": mother,}",
+            "{\"word\": \"0\", \"frequency\": further}",
+            "{\"word\": \"0\", \"frequency\": please}",
+            "{\"word\": \"0\", \"frequency\": ourselves}",
+            "{\"word\": \"0\", \"frequency\": [Aside.]}",
+            "{\"word\": \"0\", \"frequency\": given}",
+            "{\"word\": \"0\", \"frequency\": duty}",
+            "{\"word\": \"0\", \"frequency\": Hamlet's}",
+            "{\"word\": \"0\", \"frequency\": dost}",
+            "{\"word\": \"0\", \"frequency\": Whose}",
+            "{\"word\": \"0\", \"frequency\": nature,}",
+            "{\"word\": \"0\", \"frequency\": came}",
+            "{\"word\": \"0\", \"frequency\": them,}",
+            "{\"word\": \"0\", \"frequency\": virtue}",
+            "{\"word\": \"0\", \"frequency\": not.}",
+            "{\"word\": \"0\", \"frequency\": being}",
+            "{\"word\": \"0\", \"frequency\": full}",
+            "{\"word\": \"0\", \"frequency\": seem}",
+            "{\"word\": \"0\", \"frequency\": Fran.}"
+        ],
+        "textTags11": [
+            "{\"word\": \"Ham.\", \"frequency\": 299}",
+            "{\"word\": \"your\", \"frequency\": 184}",
+            "{\"word\": \"with\", \"frequency\": 182}",
+            "{\"word\": \"have\", \"frequency\": 129}",
+            "{\"word\": \"will\", \"frequency\": 105}",
+            "{\"word\": \"Hor.\", \"frequency\": 87}",
+            "{\"word\": \"what\", \"frequency\": 85}",
+            "{\"word\": \"King.\", \"frequency\": 85}",
+            "{\"word\": \"shall\", \"frequency\": 79}",
+            "{\"word\": \"Pol.\", \"frequency\": 66}",
+            "{\"word\": \"from\", \"frequency\": 64}",
+            "{\"word\": \"thou\", \"frequency\": 63}",
+            "{\"word\": \"lord,\", \"frequency\": 60}",
+            "{\"word\": \"they\", \"frequency\": 58}",
+            "{\"word\": \"What\", \"frequency\": 57}",
+            "{\"word\": \"Queen.\", \"frequency\": 56}",
+            "{\"word\": \"more\", \"frequency\": 52}",
+            "{\"word\": \"most\", \"frequency\": 52}",
+            "{\"word\": \"like\", \"frequency\": 51}",
+            "{\"word\": \"good\", \"frequency\": 50}",
+            "{\"word\": \"you,\", \"frequency\": 47}",
+            "{\"word\": \"would\", \"frequency\": 47}",
+            "{\"word\": \"Laer.\", \"frequency\": 46}",
+            "{\"word\": \"[Enter\", \"frequency\": 45}",
+            "{\"word\": \"Oph.\", \"frequency\": 42}",
+            "{\"word\": \"very\", \"frequency\": 41}",
+            "{\"word\": \"lord.\", \"frequency\": 41}",
+            "{\"word\": \"I'll\", \"frequency\": 41}",
+            "{\"word\": \"know\", \"frequency\": 41}",
+            "{\"word\": \"hath\", \"frequency\": 39}",
+            "{\"word\": \"must\", \"frequency\": 39}",
+            "{\"word\": \"their\", \"frequency\": 39}",
+            "{\"word\": \"some\", \"frequency\": 37}",
+            "{\"word\": \"Ros.\", \"frequency\": 36}",
+            "{\"word\": \"should\", \"frequency\": 36}",
+            "{\"word\": \"come\", \"frequency\": 34}",
+            "{\"word\": \"such\", \"frequency\": 32}",
+            "{\"word\": \"'tis\", \"frequency\": 31}",
+            "{\"word\": \"Clown.\", \"frequency\": 31}",
+            "{\"word\": \"them\", \"frequency\": 30}",
+            "{\"word\": \"make\", \"frequency\": 30}",
+            "{\"word\": \"much\", \"frequency\": 29}",
+            "{\"word\": \"With\", \"frequency\": 29}",
+            "{\"word\": \"love\", \"frequency\": 28}",
+            "{\"word\": \"there\", \"frequency\": 26}",
+            "{\"word\": \"upon\", \"frequency\": 25}",
+            "{\"word\": \"than\", \"frequency\": 25}",
+            "{\"word\": \"give\", \"frequency\": 25}",
+            "{\"word\": \"think\", \"frequency\": 25}",
+            "{\"word\": \"speak\", \"frequency\": 23}",
+            "{\"word\": \"these\", \"frequency\": 23}",
+            "{\"word\": \"tell\", \"frequency\": 23}",
+            "{\"word\": \"which\", \"frequency\": 23}",
+            "{\"word\": \"Mar.\", \"frequency\": 23}",
+            "{\"word\": \"thee\", \"frequency\": 22}",
+            "{\"word\": \"Guil.\", \"frequency\": 20}",
+            "{\"word\": \"time\", \"frequency\": 17}",
+            "{\"word\": \"when\", \"frequency\": 17}",
+            "{\"word\": \"Hamlet\", \"frequency\": 17}",
+            "{\"word\": \"take\", \"frequency\": 16}",
+            "{\"word\": \"sir,\", \"frequency\": 16}",
+            "{\"word\": \"lord?\", \"frequency\": 16}",
+            "{\"word\": \"might\", \"frequency\": 16}",
+            "{\"word\": \"here\", \"frequency\": 15}",
+            "{\"word\": \"Why,\", \"frequency\": 15}",
+            "{\"word\": \"well\", \"frequency\": 15}",
+            "{\"word\": \"into\", \"frequency\": 15}",
+            "{\"word\": \"dear\", \"frequency\": 15}",
+            "{\"word\": \"father\", \"frequency\": 15}",
+            "{\"word\": \"where\", \"frequency\": 15}",
+            "{\"word\": \"king\", \"frequency\": 15}",
+            "{\"word\": \"made\", \"frequency\": 15}",
+            "{\"word\": \"could\", \"frequency\": 14}",
+            "{\"word\": \"'Tis\", \"frequency\": 14}",
+            "{\"word\": \"him,\", \"frequency\": 14}",
+            "{\"word\": \"When\", \"frequency\": 14}",
+            "{\"word\": \"Osr.\", \"frequency\": 14}",
+            "{\"word\": \"Hamlet,\", \"frequency\": 14}",
+            "{\"word\": \"been\", \"frequency\": 14}",
+            "{\"word\": \"great\", \"frequency\": 13}",
+            "{\"word\": \"cannot\", \"frequency\": 13}",
+            "{\"word\": \"were\", \"frequency\": 13}",
+            "{\"word\": \"doth\", \"frequency\": 12}",
+            "{\"word\": \"mine\", \"frequency\": 12}",
+            "{\"word\": \"Where\", \"frequency\": 12}",
+            "{\"word\": \"does\", \"frequency\": 11}",
+            "{\"word\": \"But,\", \"frequency\": 11}",
+            "{\"word\": \"you.\", \"frequency\": 11}",
+            "{\"word\": \"him.\", \"frequency\": 11}",
+            "{\"word\": \"whose\", \"frequency\": 11}",
+            "{\"word\": \"now,\", \"frequency\": 11}",
+            "{\"word\": \"Nay,\", \"frequency\": 11}",
+            "{\"word\": \"hear\", \"frequency\": 11}",
+            "{\"word\": \"[Exeunt\", \"frequency\": 11}",
+            "{\"word\": \"hold\", \"frequency\": 11}",
+            "{\"word\": \"Ber.\", \"frequency\": 11}",
+            "{\"word\": \"Good\", \"frequency\": 11}",
+            "{\"word\": \"call\", \"frequency\": 11}",
+            "{\"word\": \"thus\", \"frequency\": 11}",
+            "{\"word\": \"Scene\", \"frequency\": 10}",
+            "{\"word\": \"Give\", \"frequency\": 10}",
+            "{\"word\": \"poor\", \"frequency\": 10}",
+            "{\"word\": \"look\", \"frequency\": 10}",
+            "{\"word\": \"those\", \"frequency\": 10}",
+            "{\"word\": \"itself\", \"frequency\": 10}",
+            "{\"word\": \"Polonius.]\", \"frequency\": 9}",
+            "{\"word\": \"show\", \"frequency\": 9}",
+            "{\"word\": \"[Exit.]\", \"frequency\": 9}",
+            "{\"word\": \"pray\", \"frequency\": 9}",
+            "{\"word\": \"[Exit\", \"frequency\": 9}",
+            "{\"word\": \"Which\", \"frequency\": 9}",
+            "{\"word\": \"Then\", \"frequency\": 8}",
+            "{\"word\": \"leave\", \"frequency\": 8}",
+            "{\"word\": \"then\", \"frequency\": 8}",
+            "{\"word\": \"comes\", \"frequency\": 8}",
+            "{\"word\": \"both\", \"frequency\": 8}",
+            "{\"word\": \"Laertes,\", \"frequency\": 8}",
+            "{\"word\": \"against\", \"frequency\": 8}",
+            "{\"word\": \"not,\", \"frequency\": 8}",
+            "{\"word\": \"father's\", \"frequency\": 8}",
+            "{\"word\": \"part\", \"frequency\": 8}",
+            "{\"word\": \"sweet\", \"frequency\": 8}",
+            "{\"word\": \"They\", \"frequency\": 7}",
+            "{\"word\": \"many\", \"frequency\": 7}",
+            "{\"word\": \"world\", \"frequency\": 7}",
+            "{\"word\": \"Your\", \"frequency\": 7}",
+            "{\"word\": \"that,\", \"frequency\": 7}",
+            "{\"word\": \"Will\", \"frequency\": 7}",
+            "{\"word\": \"noble\", \"frequency\": 7}",
+            "{\"word\": \"Come,\", \"frequency\": 7}",
+            "{\"word\": \"seen\", \"frequency\": 7}",
+            "{\"word\": \"dead\", \"frequency\": 7}",
+            "{\"word\": \"soul\", \"frequency\": 7}",
+            "{\"word\": \"find\", \"frequency\": 7}",
+            "{\"word\": \"head\", \"frequency\": 7}",
+            "{\"word\": \"nothing\", \"frequency\": 7}",
+            "{\"word\": \"play\", \"frequency\": 6}",
+            "{\"word\": \"And,\", \"frequency\": 6}",
+            "{\"word\": \"heaven\", \"frequency\": 6}",
+            "{\"word\": \"never\", \"frequency\": 6}",
+            "{\"word\": \"Horatio,\", \"frequency\": 6}",
+            "{\"word\": \"keep\", \"frequency\": 6}",
+            "{\"word\": \"though\", \"frequency\": 6}",
+            "{\"word\": \"this,\", \"frequency\": 6}",
+            "{\"word\": \"fair\", \"frequency\": 5}",
+            "{\"word\": \"death\", \"frequency\": 5}",
+            "{\"word\": \"Have\", \"frequency\": 5}",
+            "{\"word\": \"then,\", \"frequency\": 5}",
+            "{\"word\": \"little\", \"frequency\": 5}",
+            "{\"word\": \"believe\", \"frequency\": 5}",
+            "{\"word\": \"Rosencrantz\", \"frequency\": 5}",
+            "{\"word\": \"Upon\", \"frequency\": 5}",
+            "{\"word\": \"well,\", \"frequency\": 5}",
+            "{\"word\": \"nature\", \"frequency\": 5}",
+            "{\"word\": \"room\", \"frequency\": 5}",
+            "{\"word\": \"young\", \"frequency\": 5}",
+            "{\"word\": \"makes\", \"frequency\": 5}",
+            "{\"word\": \"Guildenstern.]\", \"frequency\": 5}",
+            "{\"word\": \"true\", \"frequency\": 5}",
+            "{\"word\": \"Ghost.\", \"frequency\": 5}",
+            "{\"word\": \"lord;\", \"frequency\": 5}",
+            "{\"word\": \"King\", \"frequency\": 5}",
+            "{\"word\": \"Castle.\", \"frequency\": 5}",
+            "{\"word\": \"Than\", \"frequency\": 4}",
+            "{\"word\": \"hast\", \"frequency\": 4}",
+            "{\"word\": \"means\", \"frequency\": 4}",
+            "{\"word\": \"life\", \"frequency\": 4}",
+            "{\"word\": \"between\", \"frequency\": 4}",
+            "{\"word\": \"you?\", \"frequency\": 4}",
+            "{\"word\": \"even\", \"frequency\": 4}",
+            "{\"word\": \"before\", \"frequency\": 4}",
+            "{\"word\": \"thing\", \"frequency\": 4}",
+            "{\"word\": \"[Exeunt.]\", \"frequency\": 4}",
+            "{\"word\": \"Rey.\", \"frequency\": 4}",
+            "{\"word\": \"bear\", \"frequency\": 4}",
+            "{\"word\": \"about\", \"frequency\": 4}",
+            "{\"word\": \"without\", \"frequency\": 4}",
+            "{\"word\": \"night,\", \"frequency\": 4}",
+            "{\"word\": \"Thou\", \"frequency\": 4}",
+            "{\"word\": \"words\", \"frequency\": 4}",
+            "{\"word\": \"What,\", \"frequency\": 3}",
+            "{\"word\": \"sent\", \"frequency\": 3}",
+            "{\"word\": \"Ophelia,\", \"frequency\": 3}",
+            "{\"word\": \"sir.\", \"frequency\": 3}",
+            "{\"word\": \"There's\", \"frequency\": 3}",
+            "{\"word\": \"hand\", \"frequency\": 3}",
+            "{\"word\": \"live\", \"frequency\": 3}",
+            "{\"word\": \"[Sings.]\", \"frequency\": 3}",
+            "{\"word\": \"you:\", \"frequency\": 3}",
+            "{\"word\": \"Most\", \"frequency\": 3}",
+            "{\"word\": \"matter\", \"frequency\": 3}",
+            "{\"word\": \"thoughts\", \"frequency\": 3}",
+            "{\"word\": \"lord!\", \"frequency\": 3}",
+            "{\"word\": \"first\", \"frequency\": 3}",
+            "{\"word\": \"indeed,\", \"frequency\": 3}",
+            "{\"word\": \"Hamlet.\", \"frequency\": 3}",
+            "{\"word\": \"earth\", \"frequency\": 3}",
+            "{\"word\": \"mother\", \"frequency\": 3}",
+            "{\"word\": \"say,\", \"frequency\": 3}",
+            "{\"word\": \"and,\", \"frequency\": 3}",
+            "{\"word\": \"know,\", \"frequency\": 3}",
+            "{\"word\": \"Would\", \"frequency\": 2}",
+            "{\"word\": \"night\", \"frequency\": 2}",
+            "{\"word\": \"There\", \"frequency\": 2}",
+            "{\"word\": \"come,\", \"frequency\": 2}",
+            "{\"word\": \"else\", \"frequency\": 2}",
+            "{\"word\": \"cause\", \"frequency\": 2}",
+            "{\"word\": \"king,\", \"frequency\": 2}",
+            "{\"word\": \"ever\", \"frequency\": 2}",
+            "{\"word\": \"better\", \"frequency\": 2}",
+            "{\"word\": \"down\", \"frequency\": 2}",
+            "{\"word\": \"Lord\", \"frequency\": 2}",
+            "{\"word\": \"till\", \"frequency\": 2}",
+            "{\"word\": \"youth\", \"frequency\": 2}",
+            "{\"word\": \"That,\", \"frequency\": 2}",
+            "{\"word\": \"body\", \"frequency\": 2}",
+            "{\"word\": \"From\", \"frequency\": 2}",
+            "{\"word\": \"love,\", \"frequency\": 2}",
+            "{\"word\": \"o'er\", \"frequency\": 2}",
+            "{\"word\": \"death,\", \"frequency\": 2}",
+            "{\"word\": \"life,\", \"frequency\": 2}",
+            "{\"word\": \"stand\", \"frequency\": 2}",
+            "{\"word\": \"Sir,\", \"frequency\": 2}",
+            "{\"word\": \"fear\", \"frequency\": 2}",
+            "{\"word\": \"other\", \"frequency\": 2}",
+            "{\"word\": \"therefore\", \"frequency\": 1}",
+            "{\"word\": \"them.\", \"frequency\": 1}",
+            "{\"word\": \"things\", \"frequency\": 1}",
+            "{\"word\": \"thousand\", \"frequency\": 1}",
+            "{\"word\": \"rest\", \"frequency\": 1}",
+            "{\"word\": \"last\", \"frequency\": 1}",
+            "{\"word\": \"majesty\", \"frequency\": 1}",
+            "{\"word\": \"Look\", \"frequency\": 1}",
+            "{\"word\": \"bring\", \"frequency\": 1}",
+            "{\"word\": \"away\", \"frequency\": 1}",
+            "{\"word\": \"Alas,\", \"frequency\": 1}",
+            "{\"word\": \"Now,\", \"frequency\": 1}",
+            "{\"word\": \"heart\", \"frequency\": 1}",
+            "{\"word\": \"madness\", \"frequency\": 1}",
+            "{\"word\": \"within\", \"frequency\": 1}",
+            "{\"word\": \"form\", \"frequency\": 1}",
+            "{\"word\": \"soul,\", \"frequency\": 1}",
+            "{\"word\": \"same\", \"frequency\": 1}",
+            "{\"word\": \"that's\", \"frequency\": 1}",
+            "{\"word\": \"queen\", \"frequency\": 1}",
+            "{\"word\": \"players\", \"frequency\": 1}",
+            "{\"word\": \"follow\", \"frequency\": 1}",
+            "{\"word\": \"kind\", \"frequency\": 1}",
+            "{\"word\": \"long\", \"frequency\": 1}",
+            "{\"word\": \"once\", \"frequency\": 1}",
+            "{\"word\": \"something\", \"frequency\": 1}",
+            "{\"word\": \"King,\", \"frequency\": 1}",
+            "{\"word\": \"this?\", \"frequency\": 1}",
+            "{\"word\": \"foul\", \"frequency\": 0}",
+            "{\"word\": \"second\", \"frequency\": 0}",
+            "{\"word\": \"wind\", \"frequency\": 0}",
+            "{\"word\": \"well.\", \"frequency\": 0}",
+            "{\"word\": \"best\", \"frequency\": 0}",
+            "{\"word\": \"man,\", \"frequency\": 0}",
+            "{\"word\": \"Gertrude,\", \"frequency\": 0}",
+            "{\"word\": \"e'en\", \"frequency\": 0}",
+            "{\"word\": \"grace\", \"frequency\": 0}",
+            "{\"word\": \"thee,\", \"frequency\": 0}",
+            "{\"word\": \"Hamlet.]\", \"frequency\": 0}",
+            "{\"word\": \"Queen\", \"frequency\": 0}",
+            "{\"word\": \"haste\", \"frequency\": 0}",
+            "{\"word\": \"Make\", \"frequency\": 0}",
+            "{\"word\": \"heard\", \"frequency\": 0}",
+            "{\"word\": \"still\", \"frequency\": 0}",
+            "{\"word\": \"Till\", \"frequency\": 0}",
+            "{\"word\": \"you;\", \"frequency\": 0}",
+            "{\"word\": \"Take\", \"frequency\": 0}",
+            "{\"word\": \"him:\", \"frequency\": 0}",
+            "{\"word\": \"himself\", \"frequency\": 0}",
+            "{\"word\": \"draw\", \"frequency\": 0}",
+            "{\"word\": \"thank\", \"frequency\": 0}",
+            "{\"word\": \"will,\", \"frequency\": 0}",
+            "{\"word\": \"here,\", \"frequency\": 0}",
+            "{\"word\": \"thine\", \"frequency\": 0}",
+            "{\"word\": \"eyes\", \"frequency\": 0}",
+            "{\"word\": \"again\", \"frequency\": 0}",
+            "{\"word\": \"mother,\", \"frequency\": 0}",
+            "{\"word\": \"further\", \"frequency\": 0}",
+            "{\"word\": \"please\", \"frequency\": 0}",
+            "{\"word\": \"ourselves\", \"frequency\": 0}",
+            "{\"word\": \"[Aside.]\", \"frequency\": 0}",
+            "{\"word\": \"given\", \"frequency\": 0}",
+            "{\"word\": \"duty\", \"frequency\": 0}",
+            "{\"word\": \"Hamlet's\", \"frequency\": 0}",
+            "{\"word\": \"dost\", \"frequency\": 0}",
+            "{\"word\": \"Whose\", \"frequency\": 0}",
+            "{\"word\": \"nature,\", \"frequency\": 0}",
+            "{\"word\": \"came\", \"frequency\": 0}",
+            "{\"word\": \"them,\", \"frequency\": 0}",
+            "{\"word\": \"virtue\", \"frequency\": 0}",
+            "{\"word\": \"not.\", \"frequency\": 0}",
+            "{\"word\": \"being\", \"frequency\": 0}",
+            "{\"word\": \"full\", \"frequency\": 0}",
+            "{\"word\": \"seem\", \"frequency\": 0}",
+            "{\"word\": \"Fran.\", \"frequency\": 0}"
+        ],
+        "textHist": [
+            [
+                "lord",
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    3,
+                    0,
+                    8,
+                    7,
+                    0,
+                    0,
+                    5,
+                    2,
+                    4,
+                    0,
+                    0,
+                    11,
+                    7,
+                    7,
+                    8,
+                    1,
+                    2,
+                    0,
+                    0,
+                    11,
+                    7,
+                    5,
+                    1,
+                    7,
+                    2,
+                    0,
+                    6,
+                    0,
+                    2,
+                    6,
+                    2,
+                    1,
+                    4,
+                    3,
+                    9,
+                    2,
+                    1,
+                    3,
+                    8,
+                    4,
+                    2,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    1,
+                    8,
+                    0,
+                    2,
+                    0,
+                    1,
+                    2,
+                    0,
+                    0,
+                    0,
+                    2,
+                    4,
+                    1,
+                    1,
+                    0,
+                    6,
+                    2,
+                    2,
+                    0,
+                    1,
+                    2,
+                    3,
+                    3,
+                    2,
+                    2,
+                    3,
+                    3,
+                    0,
+                    0
+                ]
+            ],
+            [
+                "have",
+                [
+                    2,
+                    1,
+                    0,
+                    3,
+                    3,
+                    2,
+                    0,
+                    1,
+                    2,
+                    1,
+                    0,
+                    2,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    4,
+                    0,
+                    4,
+                    4,
+                    1,
+                    2,
+                    1,
+                    4,
+                    2,
+                    5,
+                    0,
+                    3,
+                    1,
+                    2,
+                    3,
+                    7,
+                    2,
+                    5,
+                    4,
+                    3,
+                    5,
+                    3,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    0,
+                    0,
+                    2,
+                    5,
+                    0,
+                    3,
+                    2,
+                    2,
+                    3,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    0,
+                    0,
+                    9,
+                    2,
+                    1,
+                    2,
+                    3,
+                    2,
+                    0,
+                    3,
+                    3,
+                    6,
+                    3,
+                    2,
+                    0,
+                    0,
+                    0,
+                    5,
+                    5,
+                    0,
+                    2,
+                    3
+                ]
+            ]
+        ],
+        "word": "Hamlet"
+    }
+}
