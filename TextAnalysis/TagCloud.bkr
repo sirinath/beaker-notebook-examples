@@ -67,6 +67,14 @@
             "evaluatorReader": false
         },
         {
+            "id": "markdownYrWysL",
+            "type": "markdown",
+            "body": [
+                "All important variables can be initialized in a separate block. Those variables will be accessible through all Python cells (or other language by using autotranslation)."
+            ],
+            "evaluatorReader": false
+        },
+        {
             "id": "codewhszxJ",
             "type": "code",
             "evaluator": "IPython",
@@ -74,21 +82,33 @@
                 "body": [
                     "#define common variables here",
                     "",
-                    "resourcesPath = \"C:\\Users\\beakertesting\\.beaker\"",
+                    "resourcesPath = \"C:\\Users\\lukyanyukdv\\.beaker\"",
                     "tagCloudSize = 200",
                     "textChunkSize = 200",
-                    "histSize = 2"
+                    "histSize = 2",
+                    "",
+                    "from collections import Counter",
+                    "import sys, re, string, ast, itertools"
                 ]
             },
             "output": {
                 "state": {},
                 "selectedType": "Hidden",
                 "pluginName": "IPython",
-                "shellId": "F0EBDA1434C5457C8DEFF11FF71BBE96",
-                "elapsedTime": 274
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 303
             },
             "evaluatorReader": true,
-            "lineCount": 6
+            "lineCount": 9
+        },
+        {
+            "id": "markdownQgFZMF",
+            "type": "markdown",
+            "body": [
+                "Html cells can be defined before other code sells and can be used from other cells.",
+                "In this example simple div element is used for displaying cloud d3 component."
+            ],
+            "evaluatorReader": false
         },
         {
             "id": "codek4ljcQ",
@@ -116,20 +136,22 @@
             "lineCount": 4
         },
         {
-            "id": "codeBJwic8",
+            "id": "markdown72ypSH",
+            "type": "markdown",
+            "body": [
+                "This cell is loading external resources (files with analyzed text, replacements and deletions words)"
+            ],
+            "evaluatorReader": false
+        },
+        {
+            "id": "codetqiWNV",
             "type": "code",
             "evaluator": "IPython",
             "input": {
                 "body": [
-                    "from collections import Counter",
-                    "import sys, re, string, ast, itertools",
-                    "",
-                    "#replace some strings in text by another text",
-                    "def multiwordReplace(text, wordDic):   ",
-                    "    rc = re.compile('|'.join(map(re.escape, wordDic)))",
-                    "    def translate(match):",
-                    "        return wordDic[match.group(0)]",
-                    "    return rc.sub(translate, text)",
+                    "textLocation = resourcesPath + \"/TagCloud.txt\"",
+                    "deletionsLocation = resourcesPath + \"/deletions.txt\"",
+                    "replaceDictionaryLocation = resourcesPath + \"/replaces.txt\"",
                     "",
                     "#loads file containing word exclusion list",
                     "def loadDeletions(deletionsLocation):",
@@ -152,6 +174,58 @@
                     "    print 'No replace dictionary file, ignoring'  ",
                     "  return dictsFromFile",
                     "",
+                    "#loads file containing word replace list",
+                    "def loadAnalyzedText(textLocation):",
+                    "  wordString = ()",
+                    "  try:",
+                    "    with open(textLocation, 'r') as f:",
+                    "      wordString = f.read()   ",
+                    "  except IOError as e:",
+                    "    print 'No text input file, ignoring'",
+                    "  return wordString",
+                    "",
+                    "wordString = loadAnalyzedText(textLocation)",
+                    "deletions = loadDeletions(deletionsLocation)",
+                    "replaceWordsDictionary = loadReplaceWordsDictionary(replaceDictionaryLocation)"
+                ]
+            },
+            "output": {
+                "state": {},
+                "selectedType": "Hidden",
+                "pluginName": "IPython",
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 291
+            },
+            "evaluatorReader": true,
+            "lineCount": 38
+        },
+        {
+            "id": "markdownqZEhCc",
+            "type": "markdown",
+            "body": [
+                " This cell is preparing words for future analysis. ",
+                " ",
+                " For better cloud view punctuation and useless words, such as articles, prepositions and so on should be removed",
+                " ",
+                " It would be also useful to replace words variation with words themselves"
+            ],
+            "evaluatorReader": false
+        },
+        {
+            "id": "codeQlieMz",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "import re, string",
+                    "",
+                    "#replace some strings in text by another text",
+                    "def multiwordReplace(text, wordDic):   ",
+                    "    rc = re.compile('|'.join(map(re.escape, wordDic)))",
+                    "    def translate(match):",
+                    "        return wordDic[match.group(0)]",
+                    "    return rc.sub(translate, text)",
+                    "",
                     "#prepares words for analysis (deletion, replacing)",
                     "def prepareWords(textAsString, deletions, replaceDictionary):",
                     "  transTable = string.maketrans(\"\",\"\")",
@@ -161,20 +235,45 @@
                     "  filtered = list( filter((lambda x: len(str(x)) > 3), filtered))",
                     "  return filtered",
                     "",
-                    "#generates frequency array for some most common words per chunk of specified size",
-                    "def generateFrequencyChart(words, chunkSize=30, chartSize=6):",
-                    "  wordcount = Counter(words)  ",
-                    "  mostCommonWords = wordcount.most_common(chartSize)    ",
-                    "  def grouper(iterable, n, fillvalue=None):",
-                    "    args = [iter(iterable)] * n",
-                    "    return itertools.izip_longest(*args, fillvalue=fillvalue)  ",
-                    "  word_freq = [(word[0], [wordsChunk.count(word[0]) for wordsChunk in list(grouper(iter(words), chunkSize) )] ) for word in mostCommonWords]",
-                    "  return list(word_freq) ",
-                    " ",
+                    "preparedWords = prepareWords(wordString, deletions, replaceWordsDictionary)"
+                ]
+            },
+            "output": {
+                "selectedType": "Hidden",
+                "pluginName": "IPython",
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 302,
+                "state": {}
+            },
+            "evaluatorReader": true,
+            "lineCount": 19
+        },
+        {
+            "id": "markdownM8EP9z",
+            "type": "markdown",
+            "body": [
+                "This code cell generates data for words frequency cloud.",
+                "",
+                "The result of execution is an array of the dictionaries, each of them contains word and its frequency in the whole text",
+                "",
+                "The number of most common words is limited to a variable **tagCloudSize**",
+                "",
+                "Execution  result recorded in a global Beaker variable **textTags** and available in all code cells for any language (in this example - in js code cell for cloud generation)"
+            ],
+            "evaluatorReader": false
+        },
+        {
+            "id": "codejLX5fl",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "from collections import Counter",
+                    "",
                     "#returns most common words in text and their frequencies",
-                    "def getWordsFrequency(words, histSize):",
+                    "def getWordsFrequency(words, size):",
                     "  wordcount = Counter(words)",
-                    "  wordcount = wordcount.most_common(histSize)",
+                    "  wordcount = wordcount.most_common(size)",
                     "  return wordcount",
                     " ",
                     "#generates frequency array for some most common words",
@@ -188,141 +287,126 @@
                     "  words_array = [{ \"word\": word, \"frequency\" : frequency } for word, frequency in word_freq]  ",
                     "  return words_array",
                     "",
-                    "textLocation = resourcesPath + \"\\TagCloud.txt\"",
-                    "deletionsLocation = resourcesPath + \"\\deletions.txt\"",
-                    "replaceDictionaryLocation = resourcesPath + \"\\replaces.txt\"",
-                    "try:",
-                    "  with open(textLocation, 'r') as f:",
-                    "    wordString = f.read()",
-                    "    preparedWords = prepareWords(wordString, loadDeletions(deletionsLocation), loadReplaceWordsDictionary(replaceDictionaryLocation))",
-                    "    beaker.textTags = generateTagCloud(preparedWords, tagCloudSize)    ",
-                    "    textHist = generateFrequencyChart(preparedWords, textChunkSize, histSize)",
-                    "    beaker.textHist = textHist",
-                    "except IOError as e:",
-                    "  print 'No text input file, ignoring'  ",
+                    "beaker.textTags = generateTagCloud(preparedWords, tagCloudSize)    ",
                     ""
                 ]
             },
             "output": {
                 "state": {},
-                "selectedType": "Results",
+                "selectedType": "Hidden",
                 "pluginName": "IPython",
-                "shellId": "F0EBDA1434C5457C8DEFF11FF71BBE96",
-                "elapsedTime": 322,
-                "dataresult": [
-                    "{word: 'the', frequency: 99}",
-                    "{word: 'and', frequency: 68}",
-                    "{word: 'of', frequency: 61}",
-                    "{word: 'to', frequency: 59}",
-                    "{word: 'I', frequency: 49}",
-                    "{word: 'a', frequency: 42}",
-                    "{word: 'my', frequency: 42}",
-                    "{word: 'in', frequency: 36}",
-                    "{word: 'you', frequency: 33}",
-                    "{word: 'Ham.', frequency: 33}",
-                    "{word: 'is', frequency: 26}",
-                    "{word: 'his', frequency: 24}",
-                    "{word: 'it', frequency: 23}",
-                    "{word: 'not', frequency: 22}",
-                    "{word: 'And', frequency: 21}",
-                    "{word: 'that', frequency: 19}",
-                    "{word: 'your', frequency: 19}",
-                    "{word: 'with', frequency: 18}",
-                    "{word: 'this', frequency: 16}",
-                    "{word: 'be', frequency: 15}",
-                    "{word: 'for', frequency: 13}",
-                    "{word: 'he', frequency: 12}",
-                    "{word: 'have', frequency: 12}",
-                    "{word: 'The', frequency: 10}",
-                    "{word: 'as', frequency: 10}",
-                    "{word: 'but', frequency: 10}",
-                    "{word: 'me', frequency: 10}",
-                    "{word: 'will', frequency: 9}",
-                    "{word: 'him', frequency: 8}",
-                    "{word: 'are', frequency: 7}",
-                    "{word: 'To', frequency: 7}",
-                    "{word: 'That', frequency: 7}",
-                    "{word: 'Hor.', frequency: 7}",
-                    "{word: 'what', frequency: 6}",
-                    "{word: 'King.', frequency: 6}",
-                    "{word: 'our', frequency: 6}",
-                    "{word: 'do', frequency: 6}",
-                    "{word: 'so', frequency: 6}",
-                    "{word: 'we', frequency: 6}",
-                    "{word: 'shall', frequency: 6}",
-                    "{word: 'on', frequency: 6}",
-                    "{word: 'by', frequency: 5}",
-                    "{word: 'no', frequency: 4}",
-                    "{word: 'Pol.', frequency: 4}",
-                    "{word: 'all', frequency: 4}",
-                    "{word: 'But', frequency: 4}",
-                    "{word: 'from', frequency: 4}",
-                    "{word: 'thou', frequency: 4}",
-                    "{word: 'thy', frequency: 4}",
-                    "{word: 'A', frequency: 3}",
-                    "{word: 'lord,', frequency: 3}",
-                    "{word: 'or', frequency: 3}",
-                    "{word: 'they', frequency: 3}",
-                    "{word: 'at', frequency: 3}",
-                    "{word: 'What', frequency: 3}",
-                    "{word: 'Queen.', frequency: 3}",
-                    "{word: 'As', frequency: 3}",
-                    "{word: 'her', frequency: 2}",
-                    "{word: 'more', frequency: 2}",
-                    "{word: 'most', frequency: 2}",
-                    "{word: 'My', frequency: 2}",
-                    "{word: 'was', frequency: 2}",
-                    "{word: 'if', frequency: 2}",
-                    "{word: 'like', frequency: 2}",
-                    "{word: 'good', frequency: 2}",
-                    "{word: 'you,', frequency: 2}",
-                    "{word: 'For', frequency: 2}",
-                    "{word: 'would', frequency: 2}",
-                    "{word: 'Laer.', frequency: 2}",
-                    "{word: '[Enter', frequency: 1}",
-                    "{word: 'let', frequency: 1}",
-                    "{word: 'may', frequency: 1}",
-                    "{word: 'Oph.', frequency: 1}",
-                    "{word: 'O,', frequency: 1}",
-                    "{word: 'very', frequency: 1}",
-                    "{word: 'lord.', frequency: 1}",
-                    "{word: 'How', frequency: 1}",
-                    "{word: 'I'll', frequency: 1}",
-                    "{word: 'know', frequency: 1}",
-                    "{word: 'It', frequency: 1}",
-                    "{word: 'hath', frequency: 1}",
-                    "{word: 'must', frequency: 1}",
-                    "{word: 'their', frequency: 1}",
-                    "{word: 'some', frequency: 0}",
-                    "{word: 'Ros.', frequency: 0}",
-                    "{word: 'should', frequency: 0}",
-                    "{word: 'am', frequency: 0}",
-                    "{word: 'an', frequency: 0}",
-                    "{word: 'You', frequency: 0}",
-                    "{word: 'This', frequency: 0}",
-                    "{word: 'come', frequency: 0}",
-                    "{word: 'such', frequency: 0}",
-                    "{word: 'us', frequency: 0}",
-                    "{word: 'O', frequency: 0}",
-                    "{word: ''tis', frequency: 0}",
-                    "{word: 'Clown.', frequency: 0}",
-                    "{word: 'did', frequency: 0}",
-                    "{word: 'them', frequency: 0}",
-                    "{word: 'make', frequency: 0}",
-                    "{word: 'much', frequency: 0}"
-                ],
-                "result": {
-                    "type": "Results",
-                    "outputdata": [
-                        {
-                            "type": "out",
-                            "value": "No replace dictionary file, ignoring\n"
-                        }
-                    ]
-                }
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 309
             },
             "evaluatorReader": true,
-            "lineCount": 80
+            "lineCount": 21
+        },
+        {
+            "id": "markdownYiJoiU",
+            "type": "markdown",
+            "body": [
+                "This code cell generates words frequency data per limited chunk of text.",
+                "",
+                "The result of execution is an array of the tuples, each of them contains word and its frequencies per specified chunk size.",
+                "",
+                "The number of most common words is limited to a variable **histSize**.",
+                "",
+                "Execution result recorded in a global Beaker variable **textHist** and available in all code cells for any language.",
+                "",
+                "In this example this variable used as is in the next Python cell."
+            ],
+            "evaluatorReader": false
+        },
+        {
+            "id": "codeC0HeyG",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "from collections import Counter",
+                    "import sys, re, string, ast, itertools",
+                    "",
+                    "#generates frequency array for some most common words per chunk of specified size",
+                    "def generateFrequencyChart(words, chunkSize=30, chartSize=6):",
+                    "  wordcount = Counter(words)  ",
+                    "  mostCommonWords = wordcount.most_common(chartSize)    ",
+                    "  def grouper(iterable, n, fillvalue=None):",
+                    "    args = [iter(iterable)] * n",
+                    "    return itertools.izip_longest(*args, fillvalue=fillvalue)  ",
+                    "  word_freq = [(word[0], [wordsChunk.count(word[0]) for wordsChunk in list(grouper(iter(words), chunkSize) )] ) for word in mostCommonWords]",
+                    "  return list(word_freq) ",
+                    "",
+                    "textHist = generateFrequencyChart(preparedWords, textChunkSize, histSize)",
+                    "beaker.textHist = textHist"
+                ]
+            },
+            "output": {
+                "state": {},
+                "selectedType": "Hidden",
+                "pluginName": "IPython",
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 305
+            },
+            "evaluatorReader": true,
+            "lineCount": 15
+        },
+        {
+            "id": "markdownqGa9tp",
+            "type": "markdown",
+            "body": [
+                "Thic cell displays histohram of most common words, based on  **textHist** data from previous Python cell.",
+                "",
+                ""
+            ],
+            "evaluatorReader": false
+        },
+        {
+            "id": "codedhuViu",
+            "type": "code",
+            "evaluator": "IPython",
+            "input": {
+                "body": [
+                    "import matplotlib.pyplot as plt",
+                    "import matplotlib.cm as cm",
+                    "import numpy as np",
+                    "from random import randint",
+                    "",
+                    "",
+                    "def printHist(wordfrequency):   ",
+                    "  plt.subplot(1,1,1)",
+                    "  colors = cm.rainbow(np.linspace(0, 1, 10))",
+                    "  rect = plt.bar(range(0,len(wordfrequency[1])), wordfrequency[1], 2.0, color=colors[randint(0, len(colors)-1)], alpha=0.5)  ",
+                    "  plt.grid(True)  ",
+                    "  return rect[0]",
+                    "",
+                    "plt.title('Histogram of words')",
+                    "plt.xlabel('parts of text ' + str(textChunkSize) + ' words per part')  ",
+                    "plt.ylabel('frequency')  ",
+                    "plt.legend( tuple(map(printHist, textHist)), tuple(((word) for word, frequency in textHist)) )",
+                    "plt.legend(loc='upper right')",
+                    "plt.show()"
+                ]
+            },
+            "output": {
+                "state": {},
+                "result": "<div class=\"output_subarea output_png\"><img src=\"data:image/png;base64,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\nrV5tCMgwDMMIhTmAkLg4Xgtu6jJN4TBNRtSYAzAMw8gwxcXF3HXXXVHLOASLARiGkTFSjVXfPmEi\nDU2ZO777dRMm339Pu8sVFhby+OOPc/HFFwfTpk2bxuOPP87cuXM7VNMNN9zAkCFDuPfee0PpmjJl\nChdddFGry3RUDMCeAjIMI6s0NCkjrp2Qse2vmX5/qOU68nHKMIS9qM1m4NyGgELi6tioi7qONU23\nT5jIN398d8q/2ydMjERTpnBRU1T84he/4NRTT+W4447jzDPPZMaMGcG8adOmccEFF/DDH/6Q/v37\nc+qppzJ//nymTp3K0KFDyc/P58knn2x126+88gqjRo2if//+XHDBBSxbtgyAa6+9lg0bNvClL32J\nvn378uCDmf1oot0BGEY7tHXFGvZq03CTtq60Tz31VObNm8cJJ5zAX/7yF77xjW+wdu1a8vPzAVi0\naBHf/va32bZtG3fffTdXXXUVX/7yl1m7di0lJSVcccUVXHnllfTq1Sthu4sXL+bGG2/klVde4dxz\nz2X69OlceumlrFmzhunTpzNv3jwef/zxNoeAOgq7AwhJUVFR1BJS4qIu0xQO0xQtqsrll19O//79\ng7/vfe97wbDQlVdeyQknnADAVVddxWmnncbChQuD9YcNG8b111+PiHDVVVdRVVXF3XffTdeuXfns\nZz9Lt27d+PDDD4PlY9v9wx/+wL/9278xevRoRITrrruO7t27s2DBgizuvYc5AMMwchIR4cUXX6S+\nvj74+81vfhPcFTz55JOcc845gXNYvnw5dXUtny+J3QkA9OzZE4Djjz8+YdquXbsOKXf9+vX86le/\nSnA8GzdupKqqKlO72irmAELi6tioi7pMUzhMk3vETv4bNmzgpptu4n//93/Ztm0b9fX1fOxjH+uQ\n4OzQoUP52c9+luB4du3axdVXXw10XJqHMJgDMAzDSGL37t106tSJQYMG0dzczNSpU1m+fPlhby/+\ni1033XQTv/vd71i0aBGqyu7du3n11VeDu4X8/HzWrl3bIfvRHhYEDomrY6Mu6jJN4chVTf26SUaD\n5/26Hf4VdOzR0DPOOIMf/ehHfPKTn6RTp05cd911fPrTnz5kueR129suwCc+8Qkee+wxbrnlFj74\n4AN69uzJmDFjGDt2LAB33HEH3//+9/nJT37CXXfdxQ9/+MPD3p/2sBfBDKMdvvnju9t8CmjKg+2/\n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\n\"></div>",
+                "selectedType": "Html",
+                "pluginName": "IPython",
+                "shellId": "139974AE3DBC496FB75B38141E37339A",
+                "elapsedTime": 642
+            },
+            "evaluatorReader": true,
+            "lineCount": 19
+        },
+        {
+            "id": "markdownRdTo5l",
+            "type": "markdown",
+            "body": [
+                "This cell is the js representation of the **textTags** results from the previous code cell (using autotranslation mechanism).",
+                "",
+                "d3 cloud layout component uses previous html code cell with div element for words cloud creation."
+            ],
+            "evaluatorReader": false
         },
         {
             "id": "codeOvDzac",
@@ -377,46 +461,10 @@
                 },
                 "selectedType": "Text",
                 "pluginName": "JavaScript",
-                "elapsedTime": 354
+                "elapsedTime": 212
             },
             "evaluatorReader": true,
             "lineCount": 27
-        },
-        {
-            "id": "codedhuViu",
-            "type": "code",
-            "evaluator": "IPython",
-            "input": {
-                "body": [
-                    "import matplotlib.pyplot as plt",
-                    "import matplotlib.cm as cm",
-                    "import numpy as np",
-                    "from random import randint",
-                    "",
-                    "def printHist(wordfrequency):   ",
-                    "  plt.subplot(1,1,1)  ",
-                    "  rect = plt.bar(range(0,len(wordfrequency[1])), wordfrequency[1], 2.0, color=colors1[randint(0, len(cm.rainbow(np.linspace(0, 1, 10)))-1)], alpha=0.5)  ",
-                    "  plt.grid(True)  ",
-                    "  return rect[0]",
-                    "",
-                    "plt.title('Histogram of words')",
-                    "plt.xlabel('parts of text ' + str(textChunkSize) + ' words per part')  ",
-                    "plt.ylabel('frequency')  ",
-                    "plt.legend( tuple(map(printHist, textHist)), tuple(((word) for word, frequency in textHist)) )",
-                    "plt.legend(loc='upper right')",
-                    "plt.show()"
-                ]
-            },
-            "output": {
-                "state": {},
-                "result": "<div class=\"output_subarea output_png\"><img src=\"data:image/png;base64,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\nDIBhGEae8v8D7eqwzi1rxlEAAAAASUVORK5CYII=\n\"></div>",
-                "selectedType": "Html",
-                "pluginName": "IPython",
-                "shellId": "F0EBDA1434C5457C8DEFF11FF71BBE96",
-                "elapsedTime": 633
-            },
-            "evaluatorReader": true,
-            "lineCount": 17
         }
     ],
     "namespace": {
@@ -837,767 +885,771 @@
             ],
             "values": [
                 [
-                    198,
-                    "lord"
-                ],
-                [
-                    158,
-                    "have"
-                ],
-                [
-                    144,
-                    "will"
-                ],
-                [
-                    130,
-                    "King"
-                ],
-                [
-                    103,
-                    "what"
-                ],
-                [
-                    100,
-                    "shall"
-                ],
-                [
-                    87,
+                    199,
                     "Hamlet"
                 ],
                 [
-                    85,
-                    "Queen"
+                    110,
+                    "lord"
                 ],
                 [
-                    81,
-                    "thou"
+                    87,
+                    "have"
                 ],
                 [
                     80,
-                    "more"
+                    "will"
                 ],
                 [
-                    78,
-                    "What"
+                    72,
+                    "King"
                 ],
                 [
-                    75,
-                    "from"
+                    57,
+                    "what"
                 ],
                 [
-                    67,
-                    "they"
-                ],
-                [
-                    65,
-                    "come"
-                ],
-                [
-                    65,
-                    "good"
-                ],
-                [
-                    63,
-                    "know"
-                ],
-                [
-                    61,
-                    "them"
-                ],
-                [
-                    61,
-                    "like"
-                ],
-                [
-                    59,
-                    "most"
-                ],
-                [
-                    56,
-                    "would"
-                ],
-                [
-                    56,
-                    "well"
-                ],
-                [
-                    54,
-                    "love"
-                ],
-                [
-                    52,
-                    "Enter"
-                ],
-                [
-                    51,
-                    "Laer"
+                    55,
+                    "shall"
                 ],
                 [
                     48,
-                    "there"
+                    "Hamletlet"
                 ],
                 [
-                    46,
-                    "thee"
-                ],
-                [
-                    46,
-                    "very"
+                    47,
+                    "Queen"
                 ],
                 [
                     45,
-                    "king"
+                    "thou"
                 ],
                 [
                     44,
-                    "hath"
+                    "more"
                 ],
                 [
                     43,
-                    "must"
+                    "What"
                 ],
                 [
-                    42,
-                    "speak"
-                ],
-                [
-                    42,
-                    "their"
-                ],
-                [
-                    40,
-                    "some"
-                ],
-                [
-                    40,
-                    "should"
-                ],
-                [
-                    38,
-                    "father"
+                    41,
+                    "from"
                 ],
                 [
                     37,
-                    "such"
+                    "they"
+                ],
+                [
+                    36,
+                    "come"
+                ],
+                [
+                    36,
+                    "good"
                 ],
                 [
                     35,
-                    "much"
+                    "know"
                 ],
                 [
                     34,
-                    "make"
+                    "them"
                 ],
                 [
                     34,
-                    "Clown"
-                ],
-                [
-                    33,
-                    "think"
-                ],
-                [
-                    33,
-                    "Laertes"
+                    "like"
                 ],
                 [
                     32,
-                    "then"
-                ],
-                [
-                    32,
-                    "Horatio"
+                    "most"
                 ],
                 [
                     31,
-                    "which"
+                    "would"
                 ],
                 [
-                    29,
-                    "here"
+                    31,
+                    "well"
                 ],
                 [
-                    29,
-                    "time"
-                ],
-                [
-                    28,
-                    "these"
+                    30,
+                    "love"
                 ],
                 [
                     28,
-                    "upon"
+                    "Enter"
+                ],
+                [
+                    28,
+                    "Laer"
                 ],
                 [
                     27,
-                    "tell"
-                ],
-                [
-                    27,
-                    "give"
-                ],
-                [
-                    27,
-                    "heaven"
+                    "there"
                 ],
                 [
                     26,
-                    "than"
+                    "thee"
                 ],
                 [
                     26,
-                    "Exit"
+                    "very"
                 ],
                 [
                     25,
-                    "death"
+                    "king"
+                ],
+                [
+                    24,
+                    "hath"
+                ],
+                [
+                    24,
+                    "must"
                 ],
                 [
                     23,
-                    "Polonius"
+                    "speak"
                 ],
                 [
                     23,
-                    "Exeunt"
+                    "their"
                 ],
                 [
                     22,
-                    "Guil"
+                    "some"
                 ],
                 [
                     22,
-                    "play"
+                    "should"
                 ],
                 [
                     21,
-                    "soul"
+                    "father"
                 ],
                 [
                     20,
-                    "life"
+                    "such"
                 ],
                 [
                     19,
+                    "much"
+                ],
+                [
+                    19,
+                    "make"
+                ],
+                [
+                    19,
+                    "Clown"
+                ],
+                [
+                    18,
+                    "think"
+                ],
+                [
+                    18,
+                    "Laertes"
+                ],
+                [
+                    17,
+                    "then"
+                ],
+                [
+                    17,
+                    "Horatio"
+                ],
+                [
+                    17,
+                    "which"
+                ],
+                [
+                    16,
+                    "here"
+                ],
+                [
+                    16,
+                    "time"
+                ],
+                [
+                    15,
+                    "these"
+                ],
+                [
+                    15,
+                    "upon"
+                ],
+                [
+                    15,
+                    "tell"
+                ],
+                [
+                    15,
+                    "give"
+                ],
+                [
+                    15,
+                    "heaven"
+                ],
+                [
+                    14,
+                    "than"
+                ],
+                [
+                    14,
+                    "Exit"
+                ],
+                [
+                    13,
+                    "death"
+                ],
+                [
+                    13,
+                    "Polonius"
+                ],
+                [
+                    13,
+                    "Exeunt"
+                ],
+                [
+                    12,
+                    "Guil"
+                ],
+                [
+                    12,
+                    "play"
+                ],
+                [
+                    12,
+                    "soul"
+                ],
+                [
+                    11,
+                    "life"
+                ],
+                [
+                    10,
                     "mother"
                 ],
                 [
-                    18,
+                    10,
                     "night"
                 ],
                 [
-                    18,
+                    10,
                     "hear"
                 ],
                 [
-                    17,
+                    9,
                     "dead"
                 ],
                 [
-                    17,
+                    9,
                     "when"
                 ],
                 [
-                    17,
+                    9,
                     "again"
                 ],
                 [
-                    17,
+                    9,
                     "thus"
                 ],
                 [
-                    17,
+                    9,
                     "made"
                 ],
                 [
-                    16,
+                    9,
                     "mine"
                 ],
                 [
-                    16,
+                    9,
                     "Guildenstern"
                 ],
                 [
-                    16,
+                    9,
                     "Ophelia"
                 ],
                 [
-                    16,
+                    9,
                     "might"
                 ],
                 [
-                    15,
+                    8,
                     "where"
                 ],
                 [
-                    15,
+                    8,
                     "cannot"
                 ],
                 [
-                    14,
+                    8,
                     "matter"
                 ],
                 [
-                    14,
+                    8,
                     "dear"
                 ],
                 [
-                    14,
+                    8,
                     "down"
                 ],
                 [
-                    14,
+                    8,
                     "heart"
                 ],
                 [
-                    14,
+                    8,
                     "take"
                 ],
                 [
-                    14,
+                    8,
                     "into"
                 ],
                 [
-                    14,
+                    8,
                     "could"
                 ],
                 [
-                    13,
+                    7,
                     "nature"
                 ],
                 [
-                    13,
+                    7,
                     "been"
                 ],
                 [
-                    13,
+                    7,
                     "head"
                 ],
                 [
-                    13,
+                    7,
                     "Rosencrantz"
                 ],
                 [
-                    13,
+                    7,
                     "nothing"
                 ],
                 [
-                    13,
+                    7,
                     "great"
                 ],
                 [
-                    13,
+                    7,
                     "Ghost"
                 ],
                 [
-                    12,
+                    6,
                     "Where"
                 ],
                 [
-                    12,
+                    6,
                     "leave"
                 ],
                 [
-                    12,
+                    6,
                     "When"
                 ],
                 [
-                    11,
+                    6,
                     "queen"
                 ],
                 [
-                    11,
+                    6,
                     "earth"
                 ],
                 [
-                    11,
+                    6,
                     "were"
                 ],
                 [
-                    11,
+                    6,
                     "world"
                 ],
                 [
-                    11,
+                    6,
                     "part"
                 ],
                 [
-                    11,
+                    6,
                     "Good"
                 ],
                 [
-                    10,
+                    5,
                     "doth"
                 ],
                 [
-                    10,
+                    5,
                     "true"
                 ],
                 [
-                    10,
+                    5,
                     "comes"
                 ],
                 [
-                    10,
+                    5,
                     "pray"
                 ],
                 [
-                    10,
+                    5,
                     "sweet"
                 ],
                 [
-                    10,
+                    5,
                     "look"
                 ],
                 [
-                    10,
+                    5,
                     "itself"
                 ],
                 [
-                    10,
+                    5,
                     "Come"
                 ],
                 [
-                    9,
+                    5,
                     "whose"
                 ],
                 [
-                    9,
+                    5,
                     "hold"
                 ],
                 [
-                    9,
+                    5,
                     "seen"
                 ],
                 [
-                    9,
+                    5,
                     "They"
                 ],
                 [
-                    9,
+                    5,
                     "away"
                 ],
                 [
-                    9,
+                    5,
                     "indeed"
                 ],
                 [
-                    9,
+                    5,
                     "show"
                 ],
                 [
-                    9,
+                    5,
                     "both"
                 ],
                 [
-                    9,
+                    5,
                     "does"
                 ],
                 [
-                    8,
+                    4,
                     "call"
                 ],
                 [
-                    8,
+                    4,
                     "fair"
                 ],
                 [
-                    8,
+                    4,
                     "eyes"
                 ],
                 [
-                    8,
+                    4,
                     "Give"
                 ],
                 [
-                    8,
+                    4,
                     "done"
                 ],
                 [
-                    8,
+                    4,
                     "Which"
                 ],
                 [
-                    7,
+                    4,
                     "Scene"
                 ],
                 [
-                    7,
+                    4,
                     "madness"
                 ],
                 [
-                    7,
+                    4,
                     "those"
                 ],
                 [
-                    7,
+                    4,
                     "poor"
                 ],
                 [
-                    7,
+                    4,
                     "fathers"
                 ],
                 [
-                    7,
+                    4,
                     "himself"
                 ],
                 [
-                    7,
+                    4,
                     "Denmark"
                 ],
                 [
-                    7,
+                    4,
                     "means"
                 ],
                 [
-                    7,
+                    4,
                     "England"
                 ],
                 [
-                    6,
+                    3,
                     "Lord"
                 ],
                 [
-                    6,
+                    3,
                     "Then"
                 ],
                 [
-                    6,
+                    3,
                     "against"
                 ],
                 [
-                    6,
+                    3,
                     "hand"
                 ],
                 [
-                    6,
+                    3,
                     "Well"
                 ],
                 [
-                    5,
+                    2,
                     "never"
                 ],
                 [
-                    5,
+                    2,
                     "thing"
                 ],
                 [
-                    5,
+                    2,
                     "little"
                 ],
                 [
-                    5,
+                    2,
                     "many"
                 ],
                 [
-                    5,
+                    2,
                     "blood"
                 ],
                 [
-                    5,
+                    2,
                     "within"
                 ],
                 [
-                    5,
+                    2,
                     "fear"
                 ],
                 [
-                    5,
+                    2,
                     "words"
                 ],
                 [
-                    4,
+                    2,
                     "Will"
                 ],
                 [
-                    4,
+                    2,
                     "before"
                 ],
                 [
-                    4,
+                    2,
                     "noble"
                 ],
                 [
-                    4,
+                    2,
                     "find"
                 ],
                 [
-                    4,
+                    2,
                     "body"
                 ],
                 [
-                    4,
+                    2,
                     "cause"
                 ],
                 [
-                    4,
+                    2,
                     "keep"
                 ],
                 [
-                    4,
+                    2,
                     "friends"
                 ],
                 [
-                    3,
+                    1,
                     "still"
                 ],
                 [
-                    3,
+                    1,
                     "first"
                 ],
                 [
-                    3,
+                    1,
                     "speech"
                 ],
                 [
-                    3,
+                    1,
                     "believe"
                 ],
                 [
-                    3,
+                    1,
                     "majesty"
                 ],
                 [
-                    3,
+                    1,
                     "else"
                 ],
                 [
-                    3,
+                    1,
                     "though"
                 ],
                 [
-                    3,
+                    1,
                     "once"
                 ],
                 [
-                    3,
+                    1,
                     "sword"
                 ],
                 [
-                    2,
+                    1,
                     "even"
                 ],
                 [
-                    2,
+                    1,
                     "watch"
                 ],
                 [
-                    2,
+                    1,
                     "said"
                 ],
                 [
-                    2,
+                    1,
                     "thoughts"
                 ],
                 [
-                    2,
+                    1,
                     "room"
                 ],
                 [
-                    2,
+                    1,
                     "live"
                 ],
                 [
-                    2,
+                    1,
                     "Fortinbras"
                 ],
                 [
-                    2,
+                    1,
                     "without"
                 ],
                 [
-                    2,
+                    1,
                     "follow"
                 ],
                 [
-                    2,
+                    1,
                     "hast"
                 ],
                 [
-                    2,
+                    1,
                     "youth"
                 ],
                 [
-                    2,
+                    1,
                     "question"
                 ],
                 [
-                    2,
+                    1,
                     "young"
                 ],
                 [
-                    2,
+                    1,
                     "about"
                 ],
                 [
-                    2,
+                    1,
                     "state"
                 ],
                 [
-                    2,
+                    1,
                     "Have"
                 ],
                 [
-                    2,
+                    1,
                     "tongue"
                 ],
                 [
-                    2,
+                    1,
                     "Upon"
                 ],
                 [
-                    2,
+                    1,
                     "other"
                 ],
                 [
-                    1,
+                    0,
                     "better"
                 ],
                 [
-                    1,
+                    0,
                     "There"
                 ],
                 [
-                    1,
+                    0,
                     "heard"
                 ],
                 [
-                    1,
+                    0,
                     "yourself"
                 ],
                 [
-                    1,
+                    0,
                     "makes"
                 ],
                 [
-                    1,
+                    0,
                     "stand"
                 ],
                 [
-                    1,
+                    0,
                     "Castle"
                 ],
                 [
-                    1,
+                    0,
                     "gone"
                 ],
                 [
-                    1,
+                    0,
                     "reason"
                 ],
                 [
-                    1,
+                    0,
                     "players"
                 ],
                 [
-                    1,
+                    0,
                     "long"
                 ],
                 [
-                    1,
+                    0,
                     "bear"
                 ],
                 [
-                    1,
+                    0,
                     "rest"
                 ],
                 [
@@ -1631,10 +1683,6 @@
                 [
                     0,
                     "Than"
-                ],
-                [
-                    0,
-                    "duty"
                 ]
             ],
             "types": [
@@ -2248,6 +2296,94 @@
         ],
         "textHist": [
             [
+                "Hamlet",
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    4,
+                    2,
+                    10,
+                    13,
+                    4,
+                    0,
+                    0,
+                    4,
+                    3,
+                    8,
+                    4,
+                    5,
+                    14,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    9,
+                    12,
+                    8,
+                    6,
+                    8,
+                    8,
+                    0,
+                    5,
+                    3,
+                    0,
+                    1,
+                    8,
+                    3,
+                    2,
+                    5,
+                    9,
+                    9,
+                    2,
+                    5,
+                    8,
+                    15,
+                    10,
+                    0,
+                    1,
+                    9,
+                    4,
+                    5,
+                    6,
+                    3,
+                    0,
+                    9,
+                    10,
+                    7,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    4,
+                    10,
+                    12,
+                    5,
+                    5,
+                    5,
+                    5,
+                    8,
+                    10,
+                    10,
+                    5,
+                    9,
+                    7,
+                    1,
+                    0
+                ]
+            ],
+            [
                 "lord",
                 [
                     0,
@@ -2263,160 +2399,76 @@
                     0,
                     5,
                     2,
-                    4,
+                    3,
+                    1,
                     0,
-                    0,
+                    7,
                     11,
-                    7,
-                    7,
+                    3,
+                    11,
+                    2,
+                    2,
+                    0,
+                    0,
                     8,
+                    9,
+                    4,
+                    2,
+                    5,
+                    4,
+                    1,
+                    2,
+                    4,
+                    1,
+                    1,
+                    7,
+                    1,
+                    1,
+                    4,
+                    6,
+                    6,
+                    2,
+                    1,
+                    3,
+                    8,
+                    4,
+                    2,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    1,
+                    5,
+                    3,
+                    2,
+                    0,
                     1,
                     2,
                     0,
                     0,
-                    11,
-                    7,
+                    0,
+                    1,
                     5,
                     1,
-                    7,
-                    2,
                     0,
+                    1,
+                    3,
+                    5,
+                    0,
+                    2,
+                    1,
+                    1,
+                    1,
                     6,
                     0,
-                    2,
-                    6,
-                    2,
-                    1,
                     4,
-                    3,
-                    9,
-                    2,
+                    0,
+                    5,
                     1,
-                    3,
-                    8,
-                    4,
-                    2,
-                    0,
-                    0,
-                    0,
-                    1,
-                    0,
-                    1,
-                    1,
-                    8,
-                    0,
-                    2,
-                    0,
-                    1,
-                    2,
-                    0,
-                    0,
-                    0,
-                    2,
-                    4,
-                    1,
-                    1,
-                    0,
-                    6,
-                    2,
-                    2,
-                    0,
-                    1,
-                    2,
-                    3,
-                    3,
-                    2,
-                    2,
-                    3,
-                    3,
                     0,
                     0
-                ]
-            ],
-            [
-                "have",
-                [
-                    2,
-                    1,
-                    0,
-                    3,
-                    3,
-                    2,
-                    0,
-                    1,
-                    2,
-                    1,
-                    0,
-                    2,
-                    0,
-                    0,
-                    0,
-                    1,
-                    1,
-                    4,
-                    0,
-                    4,
-                    4,
-                    1,
-                    2,
-                    1,
-                    4,
-                    2,
-                    5,
-                    0,
-                    3,
-                    1,
-                    2,
-                    3,
-                    7,
-                    2,
-                    5,
-                    4,
-                    3,
-                    5,
-                    3,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    1,
-                    0,
-                    0,
-                    2,
-                    5,
-                    0,
-                    3,
-                    2,
-                    2,
-                    3,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1,
-                    0,
-                    0,
-                    9,
-                    2,
-                    1,
-                    2,
-                    3,
-                    2,
-                    0,
-                    3,
-                    3,
-                    6,
-                    3,
-                    2,
-                    0,
-                    0,
-                    0,
-                    5,
-                    5,
-                    0,
-                    2,
-                    3
                 ]
             ]
         ],
