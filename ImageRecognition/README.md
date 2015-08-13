@@ -2,6 +2,8 @@
 
 ### This example uses python sklearn library for prediction of simple images with digit.
 
+### Prediction based on the testing samples of handwritted digits and makes a prediction of the tested images (by using different classifiers)
+
 
 ****Important notes:****
 
