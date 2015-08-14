@@ -102,7 +102,7 @@
                 "selectedType": "Hidden",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 291
+                "elapsedTime": 333
             },
             "evaluatorReader": true,
             "lineCount": 8
@@ -123,8 +123,8 @@
                 "body": [
                     "import os",
                     "",
-                    "samplesDir = resourcesPath + \"\\\\samplesImages\\\\\"",
-                    "testingImagesDir = resourcesPath + \"\\\\testingImages\\\\\"",
+                    "samplesDir = resourcesPath + \"/samplesImages/\"",
+                    "testingImagesDir = resourcesPath + \"/testingImages/\"",
                     "",
                     "sampleImages = [samplesDir + f for f in os.listdir(samplesDir)]",
                     "testingImages = [testingImagesDir + f for f in os.listdir(testingImagesDir)]"
@@ -135,7 +135,7 @@
                 "selectedType": "Hidden",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 291
+                "elapsedTime": 300
             },
             "evaluatorReader": true,
             "lineCount": 7
@@ -171,7 +171,7 @@
                 "selectedType": "Hidden",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 292
+                "elapsedTime": 962
             },
             "evaluatorReader": true,
             "lineCount": 10
@@ -201,7 +201,7 @@
                 "selectedType": "Hidden",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 284
+                "elapsedTime": 312
             },
             "evaluatorReader": true,
             "lineCount": 4
@@ -211,6 +211,10 @@
             "type": "markdown",
             "body": [
                 "This cell performs images prediction based on the Polynomial kernel classifier and buids a confusion matrix.",
+                "",
+                "In predictive analytics, a table of confusion (sometimes also called a confusion matrix), is a table with two rows and two columns that reports the number of false positives, false negatives, true positives, and true negatives. ",
+                "",
+                "This allows more detailed analysis than mere proportion of correct guesses (accuracy).",
                 "",
                 "Each column of the matrix represents the instances in a predicted class, while each row represents the instances in an actual class",
                 "",
@@ -262,7 +266,7 @@
                 "selectedType": "Results",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 432
+                "elapsedTime": 825
             },
             "evaluatorReader": true,
             "lineCount": 21
@@ -323,7 +327,7 @@
                 "selectedType": "Results",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 401
+                "elapsedTime": 8475
             },
             "evaluatorReader": true,
             "lineCount": 21
@@ -385,7 +389,7 @@
                 "selectedType": "Results",
                 "pluginName": "IPython",
                 "shellId": "91739D86CF6243B988D629F345804556",
-                "elapsedTime": 444
+                "elapsedTime": 392
             },
             "evaluatorReader": true,
             "lineCount": 22
